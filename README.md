@@ -9,6 +9,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **CVE Information Retrieval**: Fetches CVE details from the National Vulnerability Database.
 - **EPSS Integration**: Includes Exploit Prediction Scoring System (EPSS) data, offering a probability score for the likelihood of CVE exploitation, aiding in prioritization.
 - **PoC Exploits Aggregation**: Gathers publicly available PoC exploits, enhancing the understanding of vulnerabilities.
+- **CISA KEV**: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
 - **User-Friendly Interface**: Easy to use, providing clear and concise information.
 - **Comprehensive Security Tool**: Ideal for quick security assessments and staying informed about recent vulnerabilities.
 
