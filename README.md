@@ -18,6 +18,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 python cve_poc.py CVE-YYYY-NNNNN
 ```
 
+<img width="865" alt="image" src="https://github.com/xaitax/SploitScan/assets/5014849/acbac2c1-0a11-4f87-8fe4-1f1146470538">
 
 
 ## Contributing
