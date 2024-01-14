@@ -18,8 +18,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 python cve_poc.py CVE-YYYY-NNNNN
 ```
 
-<img width="865" alt="image" src="https://github.com/xaitax/SploitScan/assets/5014849/acbac2c1-0a11-4f87-8fe4-1f1146470538">
-
+<img width="862" alt="image" src="https://github.com/xaitax/SploitScan/assets/5014849/5414a8a8-67ae-4fcf-b3b3-3c5003892e08">
 
 ## Contributing
 Contributions are welcome. Please feel free to fork, modify, and make pull requests or report issues.
@@ -34,7 +33,7 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 
 - [NIST NVD](https://nvd.nist.gov/developers/vulnerabilities)
 - [FIRST EPSS](https://www.first.org/epss/api)
-- [VISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
+- [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
 - [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
 
 ## ⚠️ Disclaimer
