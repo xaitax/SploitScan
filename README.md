@@ -27,12 +27,14 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 ## 📌 Author
 
 **Alexander Hagenah**
+- [URL](https://primepage.de)
 - [Twitter](https://twitter.com/xaitax)
 
 ## 👏 Credits
 
 - [NIST NVD](https://nvd.nist.gov/developers/vulnerabilities)
 - [FIRST EPSS](https://www.first.org/epss/api)
+- [VISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
 - [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
 
 ## ⚠️ Disclaimer
