@@ -37,4 +37,4 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 
 ## ⚠️ Disclaimer
 
-This tool is meant for educational and professional purposes only. No license, so do with it whatever you like.
+This tool is meant for educational and professional purposes only.
