@@ -17,6 +17,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 
 ## 🚀 Usage
 
+<img width="867" alt="image" src="https://github.com/xaitax/SploitScan/assets/5014849/1b62ba53-9bf4-498f-bd39-469aca695c83">
 
 
 <hr>
