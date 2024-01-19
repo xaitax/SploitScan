@@ -30,19 +30,31 @@ PRIORITY_COLORS = {
 
 
 def calculate_priority(cve_id, nvd_data, epss_data, poc_data, cisa_data):
-    cvss_score = float(
-        nvd_data["vulnerabilities"][0]["cve"]["metrics"]["cvssMetricV31"][0][
-            "cvssData"
-        ]["baseScore"]
-    )
-    epss_score = (
-        float(epss_data["data"][0]["epss"])
-        if epss_data and "data" in epss_data and epss_data["data"]
-        else 0
-    )
+    cvss_score = 0
+    epss_score = 0
+
+    try:
+        cvss_score = float(
+            nvd_data["vulnerabilities"][0]["cve"]["metrics"]["cvssMetricV31"][0][
+                "cvssData"
+            ]["baseScore"]
+        )
+    except (KeyError, IndexError, TypeError):
+        pass
+
+    try:
+        epss_score = (
+            float(epss_data["data"][0]["epss"])
+            if epss_data and "data" in epss_data and epss_data["data"]
+            else 0
+        )
+    except (KeyError, IndexError, TypeError):
+        pass
+
     in_cisa_kev = any(
         vuln["cveID"] == cve_id for vuln in cisa_data.get("vulnerabilities", [])
     )
+    
     has_public_exploits = len(poc_data.get("pocs", [])) > 0
 
     if in_cisa_kev or has_public_exploits:
