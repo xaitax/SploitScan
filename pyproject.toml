@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+name = "SploitScan"
+version = "0.0"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.0"
+
+[tool.poetry.scripts]
+sploitscan = "sploitscan:main"
+
+[tool.poetry.authors]
+name = "Alex xaitax"
+email = "ah@primepage.de"
+
+[tool.poetry.description]
+description = "CVE information scanner"
+
+[tool.poetry.urls]
+homepage = "https://github.com/xaitax/SploitScan"
+
+[tool.poetry.classifiers]
+Development-Status = "3 - Alpha"
+Intended-Audience = "Developers"
+License = "OSI Approved :: GPL-3.0"
+Programming-Language = "Python :: 3.8"
