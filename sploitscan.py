@@ -8,6 +8,8 @@ import csv
 import re
 from tabulate import tabulate
 
+VERSION = "0.2"
+
 BLUE = "\033[94m"
 GREEN = "\033[92m"
 ENDC = "\033[0m"
@@ -54,7 +56,7 @@ def calculate_priority(cve_id, nvd_data, epss_data, poc_data, cisa_data):
     in_cisa_kev = any(
         vuln["cveID"] == cve_id for vuln in cisa_data.get("vulnerabilities", [])
     )
-    
+
     has_public_exploits = len(poc_data.get("pocs", [])) > 0
 
     if in_cisa_kev or has_public_exploits:
@@ -182,13 +184,16 @@ def display_poc_data(data):
 
     if "pocs" in data and len(data["pocs"]) > 0:
         for poc in data["pocs"]:
+            name = poc.get("name", "N/A")
+            if len(name) > 45:
+                name = name[:45] + "[...]"
             created_at = poc.get("created_at", "N/A")
             if created_at != "N/A":
                 created_date = datetime.datetime.fromisoformat(created_at)
                 created_at = created_date.strftime("%Y-%m-%d")
 
             row = [
-                poc.get("name", "N/A"),
+                name,
                 poc.get("owner", "N/A"),
                 poc.get("stargazers_count", 0),
                 created_at,
@@ -221,17 +226,17 @@ def export_to_csv(data, filename):
 
 
 def display_banner():
-    banner = """
+    banner = f"""
 ███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
 ██╔════╝██╔══██╗██║     ██╔═══██╗██║╚══██╔══╝██╔════╝██╔════╝██╔══██╗████╗  ██║
 ███████╗██████╔╝██║     ██║   ██║██║   ██║   ███████╗██║     ███████║██╔██╗ ██║
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
+v{VERSION} / Alexander Hagenah / @xaitax / ah@primepage.de
 """
     print(BLUE + banner + ENDC)
-    print("Alexander Hagenah / @xaitax / ah@primepage.de\n")
-
+    
 
 def main(cve_ids, export_format=None):
     all_results = []
@@ -263,7 +268,11 @@ def main(cve_ids, export_format=None):
         epss_data = fetch_epss_score(cve_id)
         display_epss_score(epss_data)
 
-        print(BLUE + f"🛡️ Fetching CISA Catalog of Known Exploited Vulnerabilities:\n" + ENDC)
+        print(
+            BLUE
+            + f"🛡️ Fetching CISA Catalog of Known Exploited Vulnerabilities:\n"
+            + ENDC
+        )
         cisa_data = fetch_cisa_data()
         display_cisa_status(cve_id, cisa_data)
 
@@ -273,7 +282,14 @@ def main(cve_ids, export_format=None):
         )
         display_poc_data(poc_data)
 
-        relevant_cisa_data = next((item for item in cisa_data.get("vulnerabilities", []) if item["cveID"] == cve_id), None)
+        relevant_cisa_data = next(
+            (
+                item
+                for item in cisa_data.get("vulnerabilities", [])
+                if item["cveID"] == cve_id
+            ),
+            None,
+        )
 
         cve_result["NVD_Data"] = nvd_data if nvd_data else {}
         cve_result["EPSS_Data"] = epss_data if epss_data else {}
