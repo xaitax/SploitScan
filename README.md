@@ -54,6 +54,11 @@ This system assists users in making informed decisions on which vulnerabilities 
 
 ## 📆 Changelog
 
+### [17th February 2024] - Enhancement Update
+
+- **Additional Information**: Added further information such as references & vector string
+- **Removed**: Star count in publicly available exploits
+
 ### [15th January 2024] - Enhancement Update
 
 - **Multiple CVE Support**: Now capable of handling multiple CVE IDs in a single execution.
