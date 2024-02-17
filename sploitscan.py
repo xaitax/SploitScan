@@ -107,20 +107,27 @@ def display_nvd_data(cve_data):
             cvss_data = metrics[0].get("cvssData", {})
             baseScore = cvss_data.get("baseScore", "N/A")
             baseSeverity = cvss_data.get("baseSeverity", "N/A")
+            vectorString = cvss_data.get("vectorString", "N/A")
 
         label_width = max(
             len("Description:"),
             len("Published:"),
             len("Base Score:"),
             len("Base Severity:"),
+            len("Vector String:"),
         )
         description_label = "Description:".ljust(label_width)
         published_label = "Published:".ljust(label_width)
         base_score_label = "Base Score:".ljust(label_width)
         base_severity_label = "Base Severity:".ljust(label_width)
+        vector_string_label = "Vector String:".ljust(label_width)
 
         print(
-            f"\n{description_label} {description}\n{published_label} {published}\n{base_score_label} {baseScore}\n{base_severity_label} {baseSeverity}\n"
+            f"\n{description_label} {description}\n"
+            f"{published_label} {published}\n"
+            f"{base_score_label} {baseScore}\n"
+            f"{base_severity_label} {baseSeverity}\n"
+            f"{vector_string_label} {vectorString}\n"
         )
     else:
         print("\n❌ No NVD data found for this CVE ID.\n")
@@ -132,7 +139,7 @@ def fetch_epss_score(cve_id):
         response = requests.get(epss_url)
         response.raise_for_status()
         epss_data = response.json()
-        return epss_data  # Return the entire data
+        return epss_data
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching EPSS data: {e}")
         return None
@@ -179,7 +186,7 @@ def fetch_poc_data(base_url, params=None):
 
 
 def display_poc_data(data):
-    headers = ["Name", "Author", "Stars", "Date", "URL"]
+    headers = ["Name", "Author", "Date", "URL"]
     table = []
 
     if "pocs" in data and len(data["pocs"]) > 0:
@@ -195,7 +202,6 @@ def display_poc_data(data):
             row = [
                 name,
                 poc.get("owner", "N/A"),
-                poc.get("stargazers_count", 0),
                 created_at,
                 poc.get("html_url", "N/A"),
             ]
@@ -204,6 +210,19 @@ def display_poc_data(data):
         print(tabulate(table, headers=headers, tablefmt="fancy_grid") + "\n")
     else:
         print("No PoC data found.\n")
+
+
+def display_nvd_references(cve_data):
+    if "vulnerabilities" in cve_data and len(cve_data["vulnerabilities"]) > 0:
+        references = cve_data["vulnerabilities"][0]["cve"].get("references", [])
+        if references:
+            for reference in references:
+                print(f"URL: {reference['url']}")
+            print()
+        else:
+            print("❌ No further references found.\n")
+    else:
+        print("❌ No NVD data found to extract references from.\n")
 
 
 def is_valid_cve_id(cve_id):
@@ -236,7 +255,7 @@ def display_banner():
 v{VERSION} / Alexander Hagenah / @xaitax / ah@primepage.de
 """
     print(BLUE + banner + ENDC)
-    
+
 
 def main(cve_ids, export_format=None):
     all_results = []
@@ -281,6 +300,9 @@ def main(cve_ids, export_format=None):
             POC_API_URL, params={"cve_id": cve_id, "sort": "stargazers_count"}
         )
         display_poc_data(poc_data)
+
+        print(BLUE + f"📚 Further references: \n" + ENDC)
+        display_nvd_references(nvd_data)
 
         relevant_cisa_data = next(
             (
