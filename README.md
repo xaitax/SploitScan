@@ -85,7 +85,3 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 - [FIRST EPSS](https://www.first.org/epss/api)
 - [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
 - [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
-
-## ⚠️ Disclaimer
-
-This tool is meant for educational and professional purposes only.
