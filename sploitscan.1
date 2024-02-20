@@ -1,0 +1,70 @@
+.TH SPLOITSCAN "1" "JAN 2024" "SPLOITSCAN" "Search for CVE information"
+.RS
+.SH NAME
+\fBsploitscan\fP - Search for CVE information
+.SH SYNOPSIS
+.nf
+.fam C
+\fBsploitscan\fP [\fIPOSITION\fP] [\fIargument\fP]
+.fam T
+.fi
+.SH DESCRIPTION
+\fBSploitscan\fPis an efficient and easy-to-use command-line tool designed
+.PP
+to query CVEs. Extremely important, as it allows professionals to implement
+.PP
+measures that prevent the exploitation of discovered vulnerabilities.
+
+.SH USAGE
+.nf
+.fam C
+\fBusage:\fP sploitscan [-h] [-e {json,csv}] cve_ids [cve_ids ...]
+
+\fBNota:\fP
+Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs
+with spaces. Format for each ID: CVE-YYYY-NNNNN (Example:
+CVE-2023-23397 CVE-2024-12345)
+.fam T
+.fi
+
+.SH OPTIONS
+.nf
+.fam C
+
+-h, --help               show this help message and exit
+
+-e {json,csv}, --export {json,csv}
+                         Optional: Export the results to a JSON or CSV file.
+                         Specify the format: 'json' or 'csv'.
+.fam T
+.fi
+
+.SH EXAMPLES
+\fBDownload from CVE's .json:\fP
+.nf
+.fam C
+                        \fBsploitscan -e json CVE-2023-43261\fP
+                        \fBsploitscan --export json CVE-2023-43261\fP
+
+\fBdownload from CVE' .csv\fP
+                        \fBsploitscan -e csv CVE-2023-43261\fP
+                        \fBsploitscan --export csv CVE-2023-43261\fP
+
+\fBReads CVE's .json in text form:\fP
+                        \fBjson2yaml CVE-2023-43261_export.json | pygmentize -l yaml\fP
+
+\fB Reads CVE's .csv in text form:\fP
+                        \fB batcat CVE-2023-43261_export.csv\fP
+
+.fam T
+.fi
+
+.SH SEE ALSO
+Take a look at https://github.com/xaitax/SploitScan for information on how to use.
+.SH AUTHOR
+Sploitscan Project https://github.com/xaitax/SploitScan/issues
+.PP
+Josenilson Ferreira da Silva <nilsonfsilva@hotmail.com> Created this
+.PP
+manpage generated automatically by txt2man to generate the manual file.
+
