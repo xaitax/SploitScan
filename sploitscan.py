@@ -8,7 +8,7 @@ import csv
 import re
 from tabulate import tabulate
 
-VERSION = "0.2"
+VERSION = "0.4"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -29,48 +29,6 @@ PRIORITY_COLORS = {
     "C": "\033[94m",
     "D": "\033[92m",
 }
-
-
-def calculate_priority(cve_id, nvd_data, epss_data, poc_data, cisa_data):
-    cvss_score = 0
-    epss_score = 0
-
-    try:
-        cvss_score = float(
-            nvd_data["vulnerabilities"][0]["cve"]["metrics"]["cvssMetricV31"][0][
-                "cvssData"
-            ]["baseScore"]
-        )
-    except (KeyError, IndexError, TypeError):
-        pass
-
-    try:
-        epss_score = (
-            float(epss_data["data"][0]["epss"])
-            if epss_data and "data" in epss_data and epss_data["data"]
-            else 0
-        )
-    except (KeyError, IndexError, TypeError):
-        pass
-
-    in_cisa_kev = any(
-        vuln["cveID"] == cve_id for vuln in cisa_data.get("vulnerabilities", [])
-    )
-
-    has_public_exploits = len(poc_data.get("pocs", [])) > 0
-
-    if in_cisa_kev or has_public_exploits:
-        priority = "A+"
-    elif cvss_score >= CVSS_THRESHOLD and epss_score >= EPSS_THRESHOLD:
-        priority = "A"
-    elif cvss_score >= CVSS_THRESHOLD and epss_score < EPSS_THRESHOLD:
-        priority = "B"
-    elif cvss_score < CVSS_THRESHOLD and epss_score >= EPSS_THRESHOLD:
-        priority = "C"
-    else:
-        priority = "D"
-
-    return priority
 
 
 def fetch_nvd_data(cve_id):
@@ -100,6 +58,7 @@ def display_nvd_data(cve_data):
             (desc["value"] for desc in descriptions if desc["lang"] == "en"),
             "No description available",
         )
+        description = description.replace("\n\n", "")
 
         metrics = cve_item.get("metrics", {}).get("cvssMetricV31", [])
         baseScore = baseSeverity = "N/A"
@@ -186,7 +145,7 @@ def fetch_poc_data(base_url, params=None):
 
 
 def display_poc_data(data):
-    headers = ["Name", "Author", "Date", "URL"]
+    headers = ["Name", "Date", "URL"]
     table = []
 
     if "pocs" in data and len(data["pocs"]) > 0:
@@ -201,15 +160,77 @@ def display_poc_data(data):
 
             row = [
                 name,
-                poc.get("owner", "N/A"),
                 created_at,
                 poc.get("html_url", "N/A"),
             ]
             table.append(row)
 
+        table.sort(key=lambda x: x[1], reverse=True)
         print(tabulate(table, headers=headers, tablefmt="fancy_grid") + "\n")
     else:
         print("No PoC data found.\n")
+
+
+def load_config(config_file="config.json"):
+    with open(config_file, "r") as file:
+        config = json.load(file)
+    return config
+
+
+def fetch_vulncheck_data(cve_id):
+    config = load_config()
+    vulncheck_api_key = config.get("vulncheck_api_key")
+    if not vulncheck_api_key:
+        print("❌ API key for VulnCheck is not configured correctly.")
+        return None
+
+    url = "https://api.vulncheck.com/v3/index/vulncheck-kev"
+    headers = {
+        "accept": "application/json",
+        "authorization": f"Bearer {vulncheck_api_key}",
+    }
+    params = {"cve": cve_id}
+
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching data from VulnCheck: {e}")
+        return None
+
+
+def display_vulncheck_data(vulncheck_data):
+    table = []
+
+    if vulncheck_data and "data" in vulncheck_data:
+        for item in vulncheck_data["data"]:
+            if "vulncheck_xdb" in item:
+                for xdb in item["vulncheck_xdb"]:
+                    xdb_id = xdb.get("xdb_id", "N/A")
+
+                    date_added = xdb.get("date_added", "N/A")
+                    if date_added != "N/A":
+                        try:
+                            date_added = datetime.datetime.fromisoformat(
+                                date_added.rstrip("Z")
+                            ).strftime("%Y-%m-%d")
+                        except ValueError:
+                            pass
+
+                    clone_ssh_url = xdb.get("clone_ssh_url", "")
+                    github_url = clone_ssh_url.replace(
+                        "git@github.com:", "https://github.com/"
+                    ).replace(".git", "")
+
+                    table.append([xdb_id, date_added, github_url])
+
+        table.sort(key=lambda x: x[1], reverse=True)
+
+    if table:
+        print(tabulate(table, headers=["ID", "Date", "URL"], tablefmt="fancy_grid"))
+    else:
+        print("No exploit data found.")
 
 
 def display_nvd_references(cve_data):
@@ -223,6 +244,48 @@ def display_nvd_references(cve_data):
             print("❌ No further references found.\n")
     else:
         print("❌ No NVD data found to extract references from.\n")
+
+
+def calculate_priority(cve_id, nvd_data, epss_data, poc_data, cisa_data):
+    cvss_score = 0
+    epss_score = 0
+
+    try:
+        cvss_score = float(
+            nvd_data["vulnerabilities"][0]["cve"]["metrics"]["cvssMetricV31"][0][
+                "cvssData"
+            ]["baseScore"]
+        )
+    except (KeyError, IndexError, TypeError):
+        pass
+
+    try:
+        epss_score = (
+            float(epss_data["data"][0]["epss"])
+            if epss_data and "data" in epss_data and epss_data["data"]
+            else 0
+        )
+    except (KeyError, IndexError, TypeError):
+        pass
+
+    in_cisa_kev = any(
+        vuln["cveID"] == cve_id for vuln in cisa_data.get("vulnerabilities", [])
+    )
+
+    has_public_exploits = len(poc_data.get("pocs", [])) > 0
+
+    if in_cisa_kev or has_public_exploits:
+        priority = "A+"
+    elif cvss_score >= CVSS_THRESHOLD and epss_score >= EPSS_THRESHOLD:
+        priority = "A"
+    elif cvss_score >= CVSS_THRESHOLD and epss_score < EPSS_THRESHOLD:
+        priority = "B"
+    elif cvss_score < CVSS_THRESHOLD and epss_score >= EPSS_THRESHOLD:
+        priority = "C"
+    else:
+        priority = "D"
+
+    return priority
 
 
 def is_valid_cve_id(cve_id):
@@ -258,6 +321,8 @@ v{VERSION} / Alexander Hagenah / @xaitax / ah@primepage.de
 
 
 def main(cve_ids, export_format=None):
+    config = load_config()
+    vulncheck_api_key = config.get("vulncheck_api_key", "")
     all_results = []
     for cve_id in cve_ids:
         cve_result = {"CVE ID": cve_id}
@@ -283,7 +348,7 @@ def main(cve_ids, export_format=None):
         nvd_data = fetch_nvd_data(cve_id)
         display_nvd_data(nvd_data)
 
-        print(BLUE + f"💥 Fetching Exploit Prediction Score (EPSS):\n" + ENDC)
+        print(BLUE + f"♾️ Fetching Exploit Prediction Score (EPSS):\n" + ENDC)
         epss_data = fetch_epss_score(cve_id)
         display_epss_score(epss_data)
 
@@ -295,13 +360,17 @@ def main(cve_ids, export_format=None):
         cisa_data = fetch_cisa_data()
         display_cisa_status(cve_id, cisa_data)
 
-        print(BLUE + f"\n💣 Fetching public exploits / PoC: \n" + ENDC)
+        print(BLUE + f"\n💣 Fetching GitHub exploits / PoC: \n" + ENDC)
         poc_data = fetch_poc_data(
             POC_API_URL, params={"cve_id": cve_id, "sort": "stargazers_count"}
         )
         display_poc_data(poc_data)
 
-        print(BLUE + f"📚 Further references: \n" + ENDC)
+        print(BLUE + f"💥 Fetching VulnCheck exploits / PoC: \n" + ENDC)
+        vulncheck_data = fetch_vulncheck_data(cve_id)
+        display_vulncheck_data(vulncheck_data)
+
+        print(BLUE + f"\n📚 Further references: \n" + ENDC)
         display_nvd_references(nvd_data)
 
         relevant_cisa_data = next(

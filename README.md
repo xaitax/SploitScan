@@ -10,6 +10,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **EPSS Integration**: Includes Exploit Prediction Scoring System (EPSS) data, offering a probability score for the likelihood of CVE exploitation, aiding in prioritization.
 - **PoC Exploits Aggregation**: Gathers publicly available PoC exploits, enhancing the understanding of vulnerabilities.
 - **CISA KEV**: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
+- **VulnCheck Integration**: Leverages VulnCheck for additional exploit data, requiring a VulnCheck API key for access.
 - **Patching Priority System**: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 - **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to JSON and CSV formats.
 - **User-Friendly Interface**: Easy to use, providing clear and concise information.
@@ -54,19 +55,24 @@ This system assists users in making informed decisions on which vulnerabilities 
 
 ## 📆 Changelog
 
-### [17th February 2024] - Enhancement Update
+### [28th February 2024] - Version 0.4 - Integration and Feature Update
+- **VulnCheck Integration**: Added support for fetching exploit data from VulnCheck, enhancing the exploit information available.
+- **API Key Configuration**: Introduced the requirement for a VulnCheck API key, specified in config.json.
+- **Requirements satisfied for Debian Integration**
+
+### [17th February 2024] - Version 0.3 - Enhancement Update
 
 - **Additional Information**: Added further information such as references & vector string
 - **Removed**: Star count in publicly available exploits
 
-### [15th January 2024] - Enhancement Update
+### [15th January 2024] - Version 0.2 - Enhancement Update
 
 - **Multiple CVE Support**: Now capable of handling multiple CVE IDs in a single execution.
 - **JSON and CSV Export**: Added functionality to export results to JSON and CSV files.
 - **Enhanced CVE Display**: Improved visual differentiation and information layout for each CVE.
 - **Patching Priority System**: Introduced a priority rating system for patching, influenced by various factors including the availability of public exploits.
 
-### [13th January 2024] - Initial Release
+### [13th January 2024] - Version 0.1 - Initial Release
 
 - Initial release of SploitScan.
 
@@ -84,4 +90,5 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 - [NIST NVD](https://nvd.nist.gov/developers/vulnerabilities)
 - [FIRST EPSS](https://www.first.org/epss/api)
 - [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
+- [VulnCheck](https://vulncheck.com/)
 - [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
