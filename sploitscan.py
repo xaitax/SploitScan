@@ -18,6 +18,7 @@ NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={cve_id}"
 EPSS_API_URL = "https://api.first.org/data/v1/epss?cve={cve_id}"
 CISA_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 POC_API_URL = "https://poc-in-github.motikan2010.net/api/v1/"
+VULNCHECK_API_URL = "https://api.vulncheck.com/v3/index/vulncheck-kev"
 
 CVSS_THRESHOLD = 6.0
 EPSS_THRESHOLD = 0.2
@@ -184,7 +185,7 @@ def fetch_vulncheck_data(cve_id):
         print("❌ API key for VulnCheck is not configured correctly.")
         return None
 
-    url = "https://api.vulncheck.com/v3/index/vulncheck-kev"
+    url = VULNCHECK_API_URL
     headers = {
         "accept": "application/json",
         "authorization": f"Bearer {vulncheck_api_key}",
