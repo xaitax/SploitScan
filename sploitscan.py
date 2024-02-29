@@ -62,7 +62,7 @@ def display_nvd_data(cve_data):
         description = description.replace("\n\n", "")
 
         metrics = cve_item.get("metrics", {}).get("cvssMetricV31", [])
-        baseScore = baseSeverity = "N/A"
+        baseScore = baseSeverity = vectorString = "N/A"
         if metrics:
             cvss_data = metrics[0].get("cvssData", {})
             baseScore = cvss_data.get("baseScore", "N/A")
