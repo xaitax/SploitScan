@@ -1,19 +1,17 @@
 .TH SploitScan
-.SH Description
+.SH 📜 Description
 .PP
 SploitScan is a powerful and user\-friendly tool designed to streamline the process of identifying exploits for known vulnerabilities and their respective exploitation probability. Empowering cybersecurity professionals with the capability to swiftly identify and apply known and test exploits. It's particularly valuable for professionals seeking to enhance their security measures or develop robust detection strategies against emerging threats.
-.SH Features
+.SH 🌟 Features
 .RS
 .IP \(bu 2
 \fBCVE Information Retrieval\fP: Fetches CVE details from the National Vulnerability Database.
 .IP \(bu 2
 \fBEPSS Integration\fP: Includes Exploit Prediction Scoring System (EPSS) data, offering a probability score for the likelihood of CVE exploitation, aiding in prioritization.
 .IP \(bu 2
-\fBPoC Exploits Aggregation\fP: Gathers publicly available PoC exploits, enhancing the understanding of vulnerabilities.
+\fBPublic Exploits Aggregation\fP: Gathers publicly available exploits, enhancing the understanding of vulnerabilities.
 .IP \(bu 2
 \fBCISA KEV\fP: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
-.IP \(bu 2
-\fBVulnCheck Integration\fP: Leverages VulnCheck for additional exploit data, requiring a VulnCheck API key for access.
 .IP \(bu 2
 \fBPatching Priority System\fP: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 .IP \(bu 2
@@ -23,9 +21,18 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .IP \(bu 2
 \fBComprehensive Security Tool\fP: Ideal for quick security assessments and staying informed about recent vulnerabilities.
 .RE
-.SH Usage
+.SH 💣 Supported Exploit Databases
+.RS
+.IP \(bu 2
+\fBGitHub \[la]https://poc-in-github.motikan2010.net/\[ra]\fP
+.IP \(bu 2
+\fBExploitDB \[la]https://www.exploit-db.com/\[ra]\fP
+.IP \(bu 2
+\fBVulnCheck \[la]https://vulncheck.com/\[ra]\fP (requires a VulnCheck API key)
+.RE
+.SH 🚀 Usage
 .PP
-<hr>
+.PP
 .PP
 \fBRegular\fP:
 .PP
@@ -50,7 +57,7 @@ python sploitscan.py CVE\-YYYY\-NNNNN CVE\-YYYY\-NNNNN
 python sploitscan.py CVE\-YYYY\-NNNNN \-e JSON
 .fi
 .RE
-.SH Patching Prioritization System
+.SH 🛡️ Patching Prioritization System
 .PP
 The Patching Prioritization System in SploitScan provides a strategic approach to prioritizing security patches based on the severity and exploitability of vulnerabilities. It's influenced by the model from CVE Prioritizer \[la]https://github.com/TURROKS/CVE_Prioritizer\[ra], with enhancements for handling publicly available exploits. Here's how it works:
 .RS
@@ -71,8 +78,17 @@ D: CVSS score < 6.0 and EPSS score < 0.2. Lower severity and lower probability o
 .RE
 .PP
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
-.SH Changelog
-.SS [28th February 2024] \- Version 0.4 \- Integration and Feature Update
+.SH 📆 Changelog
+.SS [02. March 2024] \- Version 0.5
+.RS
+.IP \(bu 2
+\fBExploitDB Integration\fP: Added support for fetching exploit data from ExploitDB.
+.IP \(bu 2
+\fBCVSS Enhancements\fP: Added support for CVSS 2 and CVSS 3.x
+.IP \(bu 2
+\fBCode fixes\fP
+.RE
+.SS [28. February 2024] \- Version 0.4
 .RS
 .IP \(bu 2
 \fBVulnCheck Integration\fP: Added support for fetching exploit data from VulnCheck, enhancing the exploit information available.
@@ -81,14 +97,14 @@ This system assists users in making informed decisions on which vulnerabilities 
 .IP \(bu 2
 \fBRequirements satisfied for Debian Integration\fP
 .RE
-.SS [17th February 2024] \- Version 0.3 \- Enhancement Update
+.SS [17. February 2024] \- Version 0.3
 .RS
 .IP \(bu 2
 \fBAdditional Information\fP: Added further information such as references & vector string
 .IP \(bu 2
 \fBRemoved\fP: Star count in publicly available exploits
 .RE
-.SS [15th January 2024] \- Version 0.2 \- Enhancement Update
+.SS [15. January 2024] \- Version 0.2
 .RS
 .IP \(bu 2
 \fBMultiple CVE Support\fP: Now capable of handling multiple CVE IDs in a single execution.
@@ -99,20 +115,28 @@ This system assists users in making informed decisions on which vulnerabilities 
 .IP \(bu 2
 \fBPatching Priority System\fP: Introduced a priority rating system for patching, influenced by various factors including the availability of public exploits.
 .RE
-.SS [13th January 2024] \- Version 0.1 \- Initial Release
+.SS [13th January 2024] \- Version 0.1
 .RS
 .IP \(bu 2
 Initial release of SploitScan.
 .RE
-.SH Contributing
+.SH 🫱🏼‍🫲🏽 Contributing
 .PP
 Contributions are welcome. Please feel free to fork, modify, and make pull requests or report issues.
-.SH Author
+.RS
+.IP \(bu 2
+Nilsonfsilva \[la]https://github.com/Nilsonfsilva\[ra] for support on Debian packaging
+.IP \(bu 2
+bcoles \[la]https://github.com/bcoles\[ra] for bugfixes.
+.IP \(bu 2
+Romullo \[la]https://github.com/Romullo\[ra] for ideas & suggestions.
+.RE
+.SH 📌 Author
 .PP
 \fBAlexander Hagenah\fP
 \- URL \[la]https://primepage.de\[ra]
 \- Twitter \[la]https://twitter.com/xaitax\[ra]
-.SH Credits
+.SH 👏 Credits
 .RS
 .IP \(bu 2
 NIST NVD \[la]https://nvd.nist.gov/developers/vulnerabilities\[ra]
@@ -122,6 +146,8 @@ FIRST EPSS \[la]https://www.first.org/epss/api\[ra]
 CISA Known Exploited Vulnerabilities Catalog \[la]https://www.cisa.gov/known-exploited-vulnerabilities-catalog\[ra]
 .IP \(bu 2
 VulnCheck \[la]https://vulncheck.com/\[ra]
+.IP \(bu 2
+ExploitDB \[la]https://www.exploit-db.com/\[ra]
 .IP \(bu 2
 nomi\-sec PoC\-in\-GitHub API \[la]https://poc-in-github.motikan2010.net/\[ra]
 .RE

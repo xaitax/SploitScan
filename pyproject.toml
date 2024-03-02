@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "SploitScan"
-version = "0.2.0"
+version = "0.5.0"
 description = "A tool to fetch and display data from NVD and public exploits for given CVE IDs."
 authors = ["Alexander Hagenah <ah@primepage.de>"]
 license = "GPL-3.0"

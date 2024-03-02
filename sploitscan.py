@@ -8,7 +8,7 @@ import csv
 import re
 from tabulate import tabulate
 
-VERSION = "0.4"
+VERSION = "0.5"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -17,8 +17,9 @@ ENDC = "\033[0m"
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={cve_id}"
 EPSS_API_URL = "https://api.first.org/data/v1/epss?cve={cve_id}"
 CISA_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
-POC_API_URL = "https://poc-in-github.motikan2010.net/api/v1/"
+GITHUB_API_URL = "https://poc-in-github.motikan2010.net/api/v1/"
 VULNCHECK_API_URL = "https://api.vulncheck.com/v3/index/vulncheck-kev"
+EXPLOITDB_URL = "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv?ref_type=heads"
 
 CVSS_THRESHOLD = 6.0
 EPSS_THRESHOLD = 0.2
@@ -59,35 +60,38 @@ def display_nvd_data(cve_data):
             (desc["value"] for desc in descriptions if desc["lang"] == "en"),
             "No description available",
         )
-        description = description.replace("\n\n", "")
 
-        metrics = cve_item.get("metrics", {}).get("cvssMetricV31", [])
-        baseScore = baseSeverity = vectorString = "N/A"
-        if metrics:
-            cvss_data = metrics[0].get("cvssData", {})
-            baseScore = cvss_data.get("baseScore", "N/A")
-            baseSeverity = cvss_data.get("baseSeverity", "N/A")
-            vectorString = cvss_data.get("vectorString", "N/A")
+        metrics = cve_item.get("metrics", {})
+        baseScore, baseSeverity, vectorString = "N/A", "N/A", "N/A"
 
-        label_width = max(
-            len("Description:"),
-            len("Published:"),
-            len("Base Score:"),
-            len("Base Severity:"),
-            len("Vector String:"),
-        )
-        description_label = "Description:".ljust(label_width)
-        published_label = "Published:".ljust(label_width)
-        base_score_label = "Base Score:".ljust(label_width)
-        base_severity_label = "Base Severity:".ljust(label_width)
-        vector_string_label = "Vector String:".ljust(label_width)
+        for version_prefix in ["cvssMetricV3", "cvssMetricV2"]:
+            for key, value in metrics.items():
+                if key.startswith(version_prefix):
+                    cvss_data = value[0].get("cvssData", {})
+                    baseScore = cvss_data.get("baseScore", "N/A")
+                    baseSeverity = cvss_data.get("baseSeverity", "N/A")
+                    vectorString = cvss_data.get("vectorString", "N/A")
+                    if baseScore != "N/A":
+                        break
+            if baseScore != "N/A":
+                break
+
+        labels = [
+            "Description:",
+            "Published:",
+            "Base Score:",
+            "Base Severity:",
+            "Vector String:",
+        ]
+        label_width = max(map(len, labels))
+        formatted_labels = [label.ljust(label_width) for label in labels]
 
         print(
-            f"\n{description_label} {description}\n"
-            f"{published_label} {published}\n"
-            f"{base_score_label} {baseScore}\n"
-            f"{base_severity_label} {baseSeverity}\n"
-            f"{vector_string_label} {vectorString}\n"
+            f"\n{description}\n\n"
+            f"{formatted_labels[1]} {published}\n"
+            f"{formatted_labels[2]} {baseScore}\n"
+            f"{formatted_labels[3]} {baseSeverity}\n"
+            f"{formatted_labels[4]} {vectorString}\n"
         )
     else:
         print("\n❌ No NVD data found for this CVE ID.\n")
@@ -110,7 +114,7 @@ def display_epss_score(epss_data):
         epss_score = epss_data["data"][0].get("epss", "N/A")
         if epss_score != "N/A":
             print(
-                f"EPSS Score:    {float(epss_score) * 100:.2f}% Probability of exploitation in the wild (following publication).\n"
+                f"EPSS Score:    {float(epss_score) * 100:.2f}% Probability of exploitation.\n"
             )
     else:
         print("❌ No EPSS data found for this CVE ID.\n")
@@ -127,16 +131,20 @@ def fetch_cisa_data():
 
 def display_cisa_status(cve_id, cisa_data):
     cisa_status = "No"
+    ransomware_use = "Unknown"
     if cisa_data and "vulnerabilities" in cisa_data:
         for vulnerability in cisa_data["vulnerabilities"]:
             if vulnerability["cveID"] == cve_id:
                 cisa_status = "Yes"
+                ransomware_use = vulnerability.get("knownRansomwareCampaignUse", "Unknown")
                 break
 
-    print(f"CISA Known Exploited Vulnerabilities Listing: {cisa_status}")
+    print(f"CISA KEV Listing: {cisa_status}")
+    if cisa_status == "Yes":
+        print(f"Known Ransomware Use: {ransomware_use}")
 
 
-def fetch_poc_data(base_url, params=None):
+def fetch_github_data(base_url, params=None):
     try:
         response = requests.get(base_url, params=params)
         response.raise_for_status()
@@ -145,7 +153,7 @@ def fetch_poc_data(base_url, params=None):
         print(f"❌ An error occurred fetching PoC data: {e}")
 
 
-def display_poc_data(data):
+def display_github_data(data):
     headers = ["Name", "Date", "URL"]
     table = []
 
@@ -169,7 +177,7 @@ def display_poc_data(data):
         table.sort(key=lambda x: x[1], reverse=True)
         print(tabulate(table, headers=headers, tablefmt="fancy_grid") + "\n")
     else:
-        print("No PoC data found.\n")
+        print("No exploit data found.\n")
 
 
 def load_config(config_file="config.json"):
@@ -234,6 +242,49 @@ def display_vulncheck_data(vulncheck_data):
         print("No exploit data found.")
 
 
+def fetch_exploitdb_data(cve_id):
+    exploitdb_url = EXPLOITDB_URL
+    try:
+        response = requests.get(exploitdb_url)
+        response.raise_for_status()
+
+        decoded_content = response.content.decode("utf-8")
+        csv_reader = csv.reader(decoded_content.splitlines(), delimiter=",")
+        header = next(csv_reader)
+        codes_index = header.index("codes")
+        exploitdb_data = []
+        for row in csv_reader:
+            codes = row[codes_index].split(";")
+            if cve_id in codes:
+                exploitdb_data.append(
+                    {
+                        "id": row[0],
+                        "date": row[3],
+                    }
+                )
+        return exploitdb_data
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching data from ExploitDB.")
+        return []
+
+
+def display_exploitdb_data(exploitdb_data, cve_id):
+    headers = ["ID", "Date", "URL"]
+    table = []
+
+    for data in exploitdb_data:
+        exploit_id = data.get("id", "N/A")
+        date_published = data.get("date", "N/A")
+        url = f"https://www.exploit-db.com/exploits/{exploit_id}"
+
+        table.append([exploit_id, date_published, url])
+
+    if table:
+        print(tabulate(table, headers=headers, tablefmt="fancy_grid"))
+    else:
+        print("No exploit data found.")
+
+
 def display_nvd_references(cve_data):
     if "vulnerabilities" in cve_data and len(cve_data["vulnerabilities"]) > 0:
         references = cve_data["vulnerabilities"][0]["cve"].get("references", [])
@@ -247,7 +298,7 @@ def display_nvd_references(cve_data):
         print("❌ No NVD data found to extract references from.\n")
 
 
-def calculate_priority(cve_id, nvd_data, epss_data, poc_data, cisa_data):
+def calculate_priority(cve_id, nvd_data, epss_data, github_data, cisa_data, vulncheck_data, exploitdb_data):
     cvss_score = 0
     epss_score = 0
 
@@ -273,7 +324,11 @@ def calculate_priority(cve_id, nvd_data, epss_data, poc_data, cisa_data):
         vuln["cveID"] == cve_id for vuln in cisa_data.get("vulnerabilities", [])
     )
 
-    has_public_exploits = len(poc_data.get("pocs", [])) > 0
+    has_public_exploits = (
+        len(github_data.get("pocs", [])) > 0
+        or len(vulncheck_data.get("data", [])) > 0
+        or len(exploitdb_data) > 0
+    )
 
     if in_cisa_kev or has_public_exploits:
         priority = "A+"
@@ -354,22 +409,24 @@ def main(cve_ids, export_format=None):
         display_epss_score(epss_data)
 
         print(
-            BLUE
-            + f"🛡️ Fetching CISA Catalog of Known Exploited Vulnerabilities:\n"
-            + ENDC
+            BLUE + f"🛡️ Fetching CISA Catalog of Known Exploited Vulnerabilities:\n" + ENDC
         )
         cisa_data = fetch_cisa_data()
         display_cisa_status(cve_id, cisa_data)
 
         print(BLUE + f"\n💣 Fetching GitHub exploits / PoC: \n" + ENDC)
-        poc_data = fetch_poc_data(
-            POC_API_URL, params={"cve_id": cve_id, "sort": "stargazers_count"}
+        github_data = fetch_github_data(
+            GITHUB_API_URL, params={"cve_id": cve_id, "sort": "stargazers_count"}
         )
-        display_poc_data(poc_data)
+        display_github_data(github_data)
 
         print(BLUE + f"💥 Fetching VulnCheck exploits / PoC: \n" + ENDC)
         vulncheck_data = fetch_vulncheck_data(cve_id)
         display_vulncheck_data(vulncheck_data)
+
+        print(BLUE + f"\n👾 Fetching ExploitDB exploits / PoC: \n" + ENDC)
+        exploitdb_data = fetch_exploitdb_data(cve_id)
+        display_exploitdb_data(exploitdb_data, cve_id)
 
         print(BLUE + f"\n📚 Further references: \n" + ENDC)
         display_nvd_references(nvd_data)
@@ -386,9 +443,21 @@ def main(cve_ids, export_format=None):
         cve_result["NVD_Data"] = nvd_data if nvd_data else {}
         cve_result["EPSS_Data"] = epss_data if epss_data else {}
         cve_result["CISA_Data"] = relevant_cisa_data if relevant_cisa_data else {}
-        cve_result["PoC_Data"] = poc_data if poc_data else {}
+        cve_result["GitHub_Data"] = github_data if github_data else {}
+        cve_result["VulnCheck_Data"] = vulncheck_data if vulncheck_data else {}
+        cve_result["ExploitDB_Data"] = exploitdb_data if exploitdb_data else {}
 
-        priority = calculate_priority(cve_id, nvd_data, epss_data, poc_data, cisa_data)
+
+        priority = calculate_priority(
+            cve_id,
+            nvd_data,
+            epss_data,
+            github_data,
+            cisa_data,
+            vulncheck_data,
+            exploitdb_data,
+        )
+
         priority_color = PRIORITY_COLORS.get(priority, ENDC)
         print(BLUE + f"⚠️ Patching Priority Rating: {priority_color}{priority}{ENDC}\n")
         cve_result["Priority"] = {"priority": priority}
