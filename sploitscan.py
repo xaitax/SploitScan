@@ -60,6 +60,7 @@ def display_nvd_data(cve_data):
             (desc["value"] for desc in descriptions if desc["lang"] == "en"),
             "No description available",
         )
+        description = description.replace("\n\n", "")
 
         metrics = cve_item.get("metrics", {})
         baseScore, baseSeverity, vectorString = "N/A", "N/A", "N/A"

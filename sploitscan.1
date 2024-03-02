@@ -32,8 +32,6 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .RE
 .SH 🚀 Usage
 .PP
-.PP
-.PP
 \fBRegular\fP:
 .PP
 .RS
@@ -55,6 +53,15 @@ python sploitscan.py CVE\-YYYY\-NNNNN CVE\-YYYY\-NNNNN
 .RS
 .nf
 python sploitscan.py CVE\-YYYY\-NNNNN \-e JSON
+.fi
+.RE
+.PP
+\fBDocker\fP 
+.PP
+.RS
+.nf
+docker build \-t sploitscan .
+docker run \-\-rm sploitscan CVE\-2024\-1709
 .fi
 .RE
 .SH 🛡️ Patching Prioritization System
@@ -85,6 +92,8 @@ This system assists users in making informed decisions on which vulnerabilities 
 \fBExploitDB Integration\fP: Added support for fetching exploit data from ExploitDB.
 .IP \(bu 2
 \fBCVSS Enhancements\fP: Added support for CVSS 2 and CVSS 3.x
+.IP \(bu 2
+\fBDocker support\fP
 .IP \(bu 2
 \fBCode fixes\fP
 .RE
