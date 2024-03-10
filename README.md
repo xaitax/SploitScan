@@ -42,7 +42,7 @@ python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
 **Optional: Export the results to a JSON or CSV file. Specify the format: 'json' or 'csv'.**
 
 ```bash
-python sploitscan.py CVE-YYYY-NNNNN -e JSON
+python sploitscan.py CVE-YYYY-NNNNN -e json
 ```
 
 **Docker** 
