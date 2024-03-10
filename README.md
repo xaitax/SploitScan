@@ -49,7 +49,7 @@ python sploitscan.py CVE-YYYY-NNNNN -e JSON
 
 ```
 docker build -t sploitscan .
-docker run --rm sploitscan CVE-2024-1709
+docker run -v $(pwd):/app --rm sploitscan CVE-2024-1709
 ```
 
 ## 🛡️ Patching Prioritization System
