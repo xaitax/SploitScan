@@ -30,26 +30,34 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 **Regular**:
 
 ```bash
-python sploitscan.py CVE-YYYY-NNNNN
+$ python sploitscan.py CVE-YYYY-NNNNN
 ```
 
 **Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces.**
 
 ```bash
-python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
+$ python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
 ```
 
 **Optional: Export the results to a JSON or CSV file. Specify the format: 'json' or 'csv'.**
 
 ```bash
-python sploitscan.py CVE-YYYY-NNNNN -e JSON
+$ python sploitscan.py CVE-YYYY-NNNNN -e JSON
 ```
 
 **Docker** 
 
 ```
-docker build -t sploitscan .
-docker run --rm sploitscan CVE-2024-1709
+$ docker build -t sploitscan .
+$ docker run --rm sploitscan CVE-2024-1709
+
+With a volume mounted from the current directory
+
+Windows (Powershell)
+$ docker run -v ${PWD}:/app --rm sploitscan CVE-2024-1709 -e JSON
+
+Linux
+$ docker run -v $(pwd):/app --rm sploitscan CVE-2024-1709 -e JSON
 ```
 
 ## 🛡️ Patching Prioritization System
@@ -97,8 +105,9 @@ This system assists users in making informed decisions on which vulnerabilities 
 ## 🫱🏼‍🫲🏽 Contributing
 Contributions are welcome. Please feel free to fork, modify, and make pull requests or report issues.
 
-- [Nilsonfsilva](https://github.com/Nilsonfsilva) for support on Debian packaging
+- [Nilsonfsilva](https://github.com/Nilsonfsilva) for support on Debian packaging.
 - [bcoles](https://github.com/bcoles) for bugfixes.
+- [Javier Álvarez](https://github.com/jalvarezz13) for bugfixes.
 - [Romullo](https://github.com/Romullo) for ideas & suggestions.
 
 ## 📌 Author

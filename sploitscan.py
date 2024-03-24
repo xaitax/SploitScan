@@ -381,6 +381,10 @@ def main(cve_ids, export_format=None):
     config = load_config()
     vulncheck_api_key = config.get("vulncheck_api_key", "")
     all_results = []
+
+    if export_format:
+        export_format = export_format.lower()
+
     for cve_id in cve_ids:
         cve_result = {"CVE ID": cve_id}
 
@@ -485,7 +489,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "-e",
         "--export",
-        choices=["json", "csv"],
+        choices=["json", "JSON", "csv", "CSV"],
         help="Optional: Export the results to a JSON or CSV file. Specify the format: 'json' or 'csv'.",
     )
 
