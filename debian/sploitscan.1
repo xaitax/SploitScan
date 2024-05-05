@@ -1,4 +1,4 @@
-.TH SploitScan 8 "Version 0.5" "SploitScan user manual"
+.TH SploitScan 1 "Version 0.6" "SploitScan user manual"
 .SH NAME
 \fBSploitScan\fP - A tool to fetch and display vulnerability information and public exploits for given CVE IDs.
 .SH 📜 Description
@@ -19,6 +19,8 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .IP \(bu 2
 \fBMulti\-CVE Support and Export Options\fP: Supports multiple CVEs in a single run and allows exporting the results to JSON and CSV formats.
 .IP \(bu 2
+\fBVulnerability Scanner Import\fP: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
+.IP \(bu 2
 \fBUser\-Friendly Interface\fP: Easy to use, providing clear and concise information.
 .IP \(bu 2
 \fBComprehensive Security Tool\fP: Ideal for quick security assessments and staying informed about recent vulnerabilities.
@@ -30,7 +32,16 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .IP \(bu 2
 \fBExploitDB \[la]https://www.exploit-db.com/\[ra]\fP
 .IP \(bu 2
-\fBVulnCheck \[la]https://vulncheck.com/\[ra]\fP (requires a VulnCheck API key)
+\fBVulnCheck \[la]https://vulncheck.com/\[ra]\fP (requires a \fBfree\fP VulnCheck API key)
+.RE
+.SH 📁 Supported Vulnerability Scanner Import
+.RS
+.IP \(bu 2
+\fBNessus \[la]https://www.tenable.com/products/nessus\[ra] (.nessus)\fP: Import vulnerability data from Tenable Nessus.
+.IP \(bu 2
+\fBNexpose \[la]https://www.rapid7.com/products/nexpose/\[ra] (.xml)\fP: Integrate results from Rapid7 Nexpose scans.
+.IP \(bu 2
+\fBOpenVAS \[la]https://www.openvas.org/\[ra] (.xml)\fP: Use Greenbone OpenVAS scan reports to feed into SploitScan.
 .RE
 .SH 🚀 Usage
 .PP
@@ -38,7 +49,7 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .PP
 .RS
 .nf
-python sploitscan.py CVE\-YYYY\-NNNNN
+$ python sploitscan.py CVE\-YYYY\-NNNNN
 .fi
 .RE
 .PP
@@ -46,7 +57,15 @@ python sploitscan.py CVE\-YYYY\-NNNNN
 .PP
 .RS
 .nf
-python sploitscan.py CVE\-YYYY\-NNNNN CVE\-YYYY\-NNNNN
+$ python sploitscan.py CVE\-YYYY\-NNNNN CVE\-YYYY\-NNNNN
+.fi
+.RE
+.PP
+\fBOptional: Import functionality. Specify the type: 'nessus', 'nexpose' or 'openvas' and import file.\fP
+.PP
+.RS
+.nf
+$ python sploitscan.py \-\-import\-file path/to/yourfile.nessus \-\-type nessus
 .fi
 .RE
 .PP
@@ -54,7 +73,7 @@ python sploitscan.py CVE\-YYYY\-NNNNN CVE\-YYYY\-NNNNN
 .PP
 .RS
 .nf
-python sploitscan.py CVE\-YYYY\-NNNNN \-e JSON
+$ python sploitscan.py CVE\-YYYY\-NNNNN \-e JSON
 .fi
 .RE
 .PP
@@ -62,8 +81,16 @@ python sploitscan.py CVE\-YYYY\-NNNNN \-e JSON
 .PP
 .RS
 .nf
-docker build \-t sploitscan .
-docker run \-\-rm sploitscan CVE\-2024\-1709
+$ docker build \-t sploitscan .
+$ docker run \-\-rm sploitscan CVE\-2024\-1709
+
+With a volume mounted from the current directory
+
+Windows (Powershell)
+$ docker run \-v ${PWD}:/app \-\-rm sploitscan CVE\-2024\-1709 \-e JSON
+
+Linux
+$ docker run \-v $(pwd):/app \-\-rm sploitscan CVE\-2024\-1709 \-e JSON
 .fi
 .RE
 .SH 🛡️ Patching Prioritization System
@@ -88,6 +115,17 @@ D: CVSS score < 6.0 and EPSS score < 0.2. Lower severity and lower probability o
 .PP
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 .SH 📆 Changelog
+.SS [05. May 2024] \- Version 0.6
+.RS
+.IP \(bu 2
+\fBImport File Capabilities\fP: Added support for importing vulnerability data directly from Nessus, Nexpose, and OpenVAS scan files.
+.IP \(bu 2
+\fBExpanded Command\-Line Options\fP: Introduced new command\-line options to specify the import file and its type.
+.IP \(bu 2
+\fBRobust Configuration Management\fP: Improved error handling for missing or malformed configuration files.
+.IP \(bu 2
+\fBGeneral Improvements\fP: Various bug fixes and performance improvements.
+.RE
 .SS [02. March 2024] \- Version 0.5
 .RS
 .IP \(bu 2
@@ -136,9 +174,11 @@ Initial release of SploitScan.
 Contributions are welcome. Please feel free to fork, modify, and make pull requests or report issues.
 .RS
 .IP \(bu 2
-Nilsonfsilva \[la]https://github.com/Nilsonfsilva\[ra] for support on Debian packaging
+Nilsonfsilva \[la]https://github.com/Nilsonfsilva\[ra] for support on Debian packaging.
 .IP \(bu 2
 bcoles \[la]https://github.com/bcoles\[ra] for bugfixes.
+.IP \(bu 2
+Javier Álvarez \[la]https://github.com/jalvarezz13\[ra] for bugfixes.
 .IP \(bu 2
 Romullo \[la]https://github.com/Romullo\[ra] for ideas & suggestions.
 .RE

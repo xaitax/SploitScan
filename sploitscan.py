@@ -4,14 +4,17 @@ import requests
 import argparse
 import datetime
 import json
+import os
 import csv
 import re
+import xml.etree.ElementTree as ET
 from tabulate import tabulate
 
-VERSION = "0.5"
+VERSION = "0.6"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
+YELLOW = "\033[93m"
 ENDC = "\033[0m"
 
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={cve_id}"
@@ -41,14 +44,12 @@ def fetch_nvd_data(cve_id):
         return response.json()
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching data from NVD: {e}")
+        return {}
 
 
 def display_nvd_data(cve_data):
-    if (
-        cve_data
-        and "vulnerabilities" in cve_data
-        and len(cve_data["vulnerabilities"]) > 0
-    ):
+    if cve_data and "vulnerabilities" in cve_data and cve_data["vulnerabilities"]:
+
         cve_item = cve_data["vulnerabilities"][0]["cve"]
         published = cve_item.get("published", "")
         if published:
@@ -137,12 +138,14 @@ def display_cisa_status(cve_id, cisa_data):
         for vulnerability in cisa_data["vulnerabilities"]:
             if vulnerability["cveID"] == cve_id:
                 cisa_status = "Yes"
-                ransomware_use = vulnerability.get("knownRansomwareCampaignUse", "Unknown")
+                ransomware_use = vulnerability.get(
+                    "knownRansomwareCampaignUse", "Unknown"
+                )
                 break
 
     print(f"CISA KEV Listing: {cisa_status}")
     if cisa_status == "Yes":
-        print(f"Known Ransomware Use: {ransomware_use}")
+        print(f"Known Ransomware: {ransomware_use}")
 
 
 def fetch_github_data(base_url, params=None):
@@ -182,8 +185,21 @@ def display_github_data(data):
 
 
 def load_config(config_file="config.json"):
-    with open(config_file, "r") as file:
-        config = json.load(file)
+    default_config = {"vulncheck_api_key": None}
+    if not os.path.exists(config_file):
+        print("⚠️ Config file not found, using default settings.")
+        return default_config
+
+    try:
+        with open(config_file, "r") as file:
+            config = json.load(file)
+    except json.JSONDecodeError:
+        print("⚠️ Error decoding JSON from the config file, using default settings.")
+        return default_config
+    except Exception as e:
+        print(f"⚠️ Unexpected error reading config file: {e}, using default settings.")
+        return default_config
+
     return config
 
 
@@ -287,7 +303,11 @@ def display_exploitdb_data(exploitdb_data, cve_id):
 
 
 def display_nvd_references(cve_data):
-    if "vulnerabilities" in cve_data and len(cve_data["vulnerabilities"]) > 0:
+    if (
+        cve_data
+        and "vulnerabilities" in cve_data
+        and len(cve_data["vulnerabilities"]) > 0
+    ):
         references = cve_data["vulnerabilities"][0]["cve"].get("references", [])
         if references:
             for reference in references:
@@ -299,7 +319,9 @@ def display_nvd_references(cve_data):
         print("❌ No NVD data found to extract references from.\n")
 
 
-def calculate_priority(cve_id, nvd_data, epss_data, github_data, cisa_data, vulncheck_data, exploitdb_data):
+def calculate_priority(
+    cve_id, nvd_data, epss_data, github_data, cisa_data, vulncheck_data, exploitdb_data
+):
     cvss_score = 0
     epss_score = 0
 
@@ -345,23 +367,151 @@ def calculate_priority(cve_id, nvd_data, epss_data, github_data, cisa_data, vuln
     return priority
 
 
+def import_vulnerability_data(file_path, file_type):
+    if not os.path.exists(file_path):
+        print(f"❌ Error: The file '{file_path}' does not exist.")
+        return []
+
+    if file_type == "nessus":
+        return import_nessus(file_path)
+    elif file_type == "nexpose":
+        return import_nexpose(file_path)
+    elif file_type == "openvas":
+        return import_openvas(file_path)
+    else:
+        print(f"❌ Unsupported file type: {file_type}")
+        return []
+
+
+def import_nessus(file_path):
+    cve_ids = []
+    if not os.path.exists(file_path):
+        print(f"❌ Error: The file '{file_path}' does not exist.")
+        return cve_ids
+
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        for report_item in root.findall(".//ReportItem"):
+            cves = report_item.findall("cve")
+            for cve in cves:
+                cve_id = cve.text.strip()
+                if is_valid_cve_id(cve_id):
+                    cve_ids.append(cve_id)
+        unique_cve_ids = list(set(cve_ids))
+
+        print(
+            YELLOW
+            + f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{file_path}'.\n"
+        )
+        return unique_cve_ids
+    except ET.ParseError as e:
+        print(f"❌ Error parsing the Nessus file '{file_path}': {e}")
+    except Exception as e:
+        print(f"❌ An unexpected error occurred while processing '{file_path}': {e}")
+    return cve_ids
+
+
+def import_nexpose(file_path):
+    cve_ids = []
+    if not os.path.exists(file_path):
+        print(f"❌ Error: The file '{file_path}' does not exist.")
+        return cve_ids
+
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+
+        url_links = root.findall(".//URLLink")
+        for link in url_links:
+            link_title = link.get("LinkTitle")
+            if link_title and link_title.startswith("CVE-"):
+                cve_ids.append(link_title)
+
+        unique_cve_ids = list(set(cve_ids))
+        print(
+            YELLOW
+            + f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{file_path}'.\n"
+        )
+        return unique_cve_ids
+    except ET.ParseError as e:
+        print(f"❌ Error parsing the Nexpose file '{file_path}': {e}")
+    except Exception as e:
+        print(f"❌ An unexpected error occurred while processing '{file_path}': {e}")
+
+    return cve_ids
+
+
+def import_openvas(file_path):
+    cve_ids = []
+
+    if not os.path.exists(file_path):
+        print("❌ Error: The file does not exist.")
+        return cve_ids
+
+    try:
+        tree = ET.parse(file_path)
+        root = tree.getroot()
+        cve_elements = root.findall(".//cve")
+        for cve_element in cve_elements:
+            cve_text = cve_element.text.strip()
+            if cve_text and cve_text != "NOCVE":
+                split_cves = cve_text.split(",")
+                for cve in split_cves:
+                    cve = cve.strip()
+                    if cve.startswith("CVE-"):
+                        cve_ids.append(cve)
+
+        unique_cve_ids = list(set(cve_ids))
+        print(f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{file_path}'.\n")
+        return unique_cve_ids
+    except ET.ParseError as e:
+        print(f"❌ Error parsing the file: {e}")
+    except Exception as e:
+        print(f"❌ An unexpected error occurred: {e}")
+
+    return cve_ids
+
+
 def is_valid_cve_id(cve_id):
     return re.match(r"CVE-\d{4}-\d{4,7}$", cve_id) is not None
 
 
-def export_to_json(all_results, filename):
+def generate_filename(cve_ids, extension):
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    if len(cve_ids) > 3:
+        cve_part = "_".join(cve_ids[:3]) + "_and_more"
+    else:
+        cve_part = "_".join(cve_ids)
+
+    filename = f"{timestamp}_{cve_part}_export.{extension}"
+    return filename
+
+
+def export_to_json(all_results, cve_ids):
+    if not all_results:
+        print("❌ No data to export.")
+        return
+
+    filename = generate_filename(cve_ids, "json")
     with open(filename, "w") as file:
         json.dump(all_results, file, indent=4)
-    print(BLUE + f"\n✅ Data exported to JSON file: {filename}" + ENDC + "\n")
+    print(BLUE + f"✅ Data exported to JSON file: {filename}\n" + ENDC)
 
 
-def export_to_csv(data, filename):
+def export_to_csv(all_results, cve_ids):
+    if not all_results:
+        print("❌ No data to export.")
+        return
+
+    filename = generate_filename(cve_ids, "csv")
+    keys = all_results[0].keys()
     with open(filename, "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(data[0].keys())
-        for row in data:
-            writer.writerow(row.values())
-    print(BLUE + f"\n✅ Data exported to CSV file: {filename}" + ENDC + "\n")
+        writer = csv.DictWriter(file, fieldnames=keys)
+        writer.writeheader()
+        for data in all_results:
+            writer.writerow(data)
+    print(BLUE + f"✅ Data exported to CSV file: {filename}\n" + ENDC)
 
 
 def display_banner():
@@ -377,114 +527,127 @@ v{VERSION} / Alexander Hagenah / @xaitax / ah@primepage.de
     print(BLUE + banner + ENDC)
 
 
-def main(cve_ids, export_format=None):
+def main(cve_ids, export_format=None, import_file=None, import_type=None):
     config = load_config()
-    vulncheck_api_key = config.get("vulncheck_api_key", "")
     all_results = []
 
     if export_format:
         export_format = export_format.lower()
 
+    if import_file and import_type:
+        cve_ids = import_vulnerability_data(import_file, import_type)
+        if not cve_ids:
+            print("❌ No valid CVE IDs found in the provided file.")
+            return
+
+    if not cve_ids:
+        print(
+            "❌ No CVE IDs provided. Please provide CVE IDs or an import file and type."
+        )
+        return
+
     for cve_id in cve_ids:
-        cve_result = {"CVE ID": cve_id}
-
-        header = f" CVE ID: {cve_id} "
-        print(GREEN + "=" * len(header) + ENDC)
-        print(GREEN + header + ENDC)
-        print(GREEN + "=" * len(header) + ENDC + "\n")
-
-        if not cve_id:
-            print(
-                "❌ No CVE ID provided. Please provide a CVE ID in the format CVE-YYYY-NNNNN."
-            )
-            continue
-
         if not is_valid_cve_id(cve_id):
             print(
-                "❌ Invalid CVE ID format. Please provide a CVE ID in the format CVE-YYYY-NNNNN."
+                f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN."
             )
             continue
 
-        print(BLUE + f"🔍 Fetching vulnerability information:" + ENDC)
-        nvd_data = fetch_nvd_data(cve_id)
-        display_nvd_data(nvd_data)
-
-        print(BLUE + f"♾️ Fetching Exploit Prediction Score (EPSS):\n" + ENDC)
-        epss_data = fetch_epss_score(cve_id)
-        display_epss_score(epss_data)
-
-        print(
-            BLUE + f"🛡️ Fetching CISA Catalog of Known Exploited Vulnerabilities:\n" + ENDC
-        )
-        cisa_data = fetch_cisa_data()
-        display_cisa_status(cve_id, cisa_data)
-
-        print(BLUE + f"\n💣 Fetching GitHub exploits / PoC: \n" + ENDC)
-        github_data = fetch_github_data(
-            GITHUB_API_URL, params={"cve_id": cve_id, "sort": "stargazers_count"}
-        )
-        display_github_data(github_data)
-
-        print(BLUE + f"💥 Fetching VulnCheck exploits / PoC: \n" + ENDC)
-        vulncheck_data = fetch_vulncheck_data(cve_id)
-        display_vulncheck_data(vulncheck_data)
-
-        print(BLUE + f"\n👾 Fetching ExploitDB exploits / PoC: \n" + ENDC)
-        exploitdb_data = fetch_exploitdb_data(cve_id)
-        display_exploitdb_data(exploitdb_data, cve_id)
-
-        print(BLUE + f"\n📚 Further references: \n" + ENDC)
-        display_nvd_references(nvd_data)
-
-        relevant_cisa_data = next(
-            (
-                item
-                for item in cisa_data.get("vulnerabilities", [])
-                if item["cveID"] == cve_id
-            ),
-            None,
-        )
-
-        cve_result["NVD_Data"] = nvd_data if nvd_data else {}
-        cve_result["EPSS_Data"] = epss_data if epss_data else {}
-        cve_result["CISA_Data"] = relevant_cisa_data if relevant_cisa_data else {}
-        cve_result["GitHub_Data"] = github_data if github_data else {}
-        cve_result["VulnCheck_Data"] = vulncheck_data if vulncheck_data else {}
-        cve_result["ExploitDB_Data"] = exploitdb_data if exploitdb_data else {}
-
-
-        priority = calculate_priority(
-            cve_id,
-            nvd_data,
-            epss_data,
-            github_data,
-            cisa_data,
-            vulncheck_data,
-            exploitdb_data,
-        )
-
-        priority_color = PRIORITY_COLORS.get(priority, ENDC)
-        print(BLUE + f"⚠️ Patching Priority Rating: {priority_color}{priority}{ENDC}\n")
-        cve_result["Priority"] = {"priority": priority}
-
+        cve_result = collect_cve_data(cve_id)
         all_results.append(cve_result)
 
     if export_format == "json":
-        export_to_json(all_results, f"{'_'.join(cve_ids)}_export.json")
+        export_to_json(all_results, cve_ids)
     elif export_format == "csv":
-        export_to_csv(all_results, f"{'_'.join(cve_ids)}_export.csv")
+        export_to_csv(all_results, cve_ids)
+
+
+def print_cve_header(cve_id):
+    header = f" CVE ID: {cve_id} "
+    print(GREEN + "=" * len(header) + ENDC)
+    print(GREEN + header + ENDC)
+    print(GREEN + "=" * len(header) + ENDC + "\n")
+
+
+def collect_cve_data(cve_id):
+    cve_result = {"CVE ID": cve_id}
+    print_cve_header(cve_id)
+
+    print(BLUE + f"🔍 Fetching vulnerability information:" + ENDC)
+    nvd_data = fetch_nvd_data(cve_id)
+    display_nvd_data(nvd_data)
+
+    print(BLUE + f"♾️ Fetching Exploit Prediction Score (EPSS):\n" + ENDC)
+    epss_data = fetch_epss_score(cve_id)
+    display_epss_score(epss_data)
+
+    print(BLUE + f"🛡️ Fetching CISA KEV Catalog:\n" + ENDC)
+    cisa_data = fetch_cisa_data()
+    display_cisa_status(cve_id, cisa_data)
+
+    print(BLUE + f"\n💣 Fetching GitHub exploits / PoC: \n" + ENDC)
+    github_data = fetch_github_data(
+        GITHUB_API_URL, params={"cve_id": cve_id, "sort": "stargazers_count"}
+    )
+    display_github_data(github_data)
+
+    print(BLUE + f"💥 Fetching VulnCheck exploits / PoC: \n" + ENDC)
+    vulncheck_data = fetch_vulncheck_data(cve_id)
+    display_vulncheck_data(vulncheck_data)
+
+    print(BLUE + f"\n👾 Fetching ExploitDB exploits / PoC: \n" + ENDC)
+    exploitdb_data = fetch_exploitdb_data(cve_id)
+    display_exploitdb_data(exploitdb_data, cve_id)
+
+    print(BLUE + f"\n📚 Further references: \n" + ENDC)
+    display_nvd_references(nvd_data)
+
+    priority = calculate_priority(
+        cve_id,
+        nvd_data,
+        epss_data,
+        github_data,
+        cisa_data,
+        vulncheck_data,
+        exploitdb_data,
+    )
+    priority_color = PRIORITY_COLORS.get(priority, ENDC)
+    print(BLUE + f"⚠️ Patching Priority Rating: {priority_color}{priority}{ENDC}\n")
+
+    relevant_cisa_data = next(
+        (
+            item
+            for item in cisa_data.get("vulnerabilities", [])
+            if item["cveID"] == cve_id
+        ),
+        None,
+    )
+
+    cve_result.update(
+        {
+            "NVD Data": nvd_data,
+            "EPSS Data": epss_data,
+            "CISA Data": relevant_cisa_data,
+            "GitHub Data": github_data,
+            "VulnCheck Data": vulncheck_data,
+            "ExploitDB Data": exploitdb_data,
+            "Priority": {"Priority": priority},
+        }
+    )
+    return cve_result
 
 
 if __name__ == "__main__":
     display_banner()
     parser = argparse.ArgumentParser(
-        description="SploitScan: Fetch and display data from NVD and public exploits for given CVE IDs."
+        description="SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s)."
     )
     parser.add_argument(
         "cve_ids",
         type=str,
-        nargs="+",
-        help="Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE-YYYY-NNNNN (Example: CVE-2023-23397 CVE-2024-12345)",
+        nargs="*",
+        default=[],
+        help="Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE-YYYY-NNNNN. This argument is optional if an import file is provided using the -n option.",
     )
     parser.add_argument(
         "-e",
@@ -492,7 +655,19 @@ if __name__ == "__main__":
         choices=["json", "JSON", "csv", "CSV"],
         help="Optional: Export the results to a JSON or CSV file. Specify the format: 'json' or 'csv'.",
     )
+    parser.add_argument(
+        "-t",
+        "--type",
+        choices=["nessus", "nexpose", "openvas"],
+        help="Specify the type of the import file: 'nessus', 'nexpose', or 'openvas'.",
+    )
+    parser.add_argument(
+        "-i",
+        "--import-file",
+        type=str,
+        help="Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.",
+    )
 
     args = parser.parse_args()
 
-    main(args.cve_ids, args.export)
+    main(args.cve_ids, args.export, args.import_file, args.type)

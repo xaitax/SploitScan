@@ -12,6 +12,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **CISA KEV**: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
 - **Patching Priority System**: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 - **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to JSON and CSV formats.
+- **Vulnerability Scanner Import**: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
 - **User-Friendly Interface**: Easy to use, providing clear and concise information.
 - **Comprehensive Security Tool**: Ideal for quick security assessments and staying informed about recent vulnerabilities.
 
@@ -19,7 +20,14 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 
 - **[GitHub](https://poc-in-github.motikan2010.net/)**
 - **[ExploitDB](https://www.exploit-db.com/)**
-- **[VulnCheck](https://vulncheck.com/)** (requires a VulnCheck API key)
+- **[VulnCheck](https://vulncheck.com/)** (requires a **free** VulnCheck API key)
+
+## 📁 Supported Vulnerability Scanner Import
+
+- **[Nessus](https://www.tenable.com/products/nessus) (.nessus)**: Import vulnerability data from Tenable Nessus.
+- **[Nexpose](https://www.rapid7.com/products/nexpose/) (.xml)**: Integrate results from Rapid7 Nexpose scans.
+- **[OpenVAS](https://www.openvas.org/) (.xml)**: Use Greenbone OpenVAS scan reports to feed into SploitScan.
+
 
 ## 🚀 Usage
 
@@ -37,6 +45,12 @@ $ python sploitscan.py CVE-YYYY-NNNNN
 
 ```bash
 $ python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
+```
+
+**Optional: Import functionality. Specify the type: 'nessus', 'nexpose' or 'openvas' and import file.**
+
+```bash
+$ python sploitscan.py --import-file path/to/yourfile.nessus --type nessus
 ```
 
 **Optional: Export the results to a JSON or CSV file. Specify the format: 'json' or 'csv'.**
@@ -74,6 +88,12 @@ The Patching Prioritization System in SploitScan provides a strategic approach t
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 
 ## 📆 Changelog
+
+### [05. May 2024] - Version 0.6
+- **Import File Capabilities**: Added support for importing vulnerability data directly from Nessus, Nexpose, and OpenVAS scan files.
+- **Expanded Command-Line Options**: Introduced new command-line options to specify the import file and its type.
+- **Robust Configuration Management**: Improved error handling for missing or malformed configuration files.
+- **General Improvements**: Various bug fixes and performance improvements.
 
 ### [02. March 2024] - Version 0.5
 - **ExploitDB Integration**: Added support for fetching exploit data from ExploitDB.
