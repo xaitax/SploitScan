@@ -24,9 +24,9 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 
 ## 📁 Supported Vulnerability Scanner Import
 
-- **[Nessus](https://www.tenable.com/products/nessus) (.nessus)**: Import vulnerability data from Tenable Nessus.
-- **[Nexpose](https://www.rapid7.com/products/nexpose/) (.xml)**: Integrate results from Rapid7 Nexpose scans.
-- **[OpenVAS](https://www.openvas.org/) (.xml)**: Use Greenbone OpenVAS scan reports to feed into SploitScan.
+- **[Nessus](https://www.tenable.com/products/nessus) (.nessus)**
+- **[Nexpose](https://www.rapid7.com/products/nexpose/) (.xml)**
+- **[OpenVAS](https://www.openvas.org/) (.xml)**
 
 
 ## 🚀 Usage
