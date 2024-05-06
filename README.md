@@ -27,6 +27,8 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **[Nessus](https://www.tenable.com/products/nessus) (.nessus)**
 - **[Nexpose](https://www.rapid7.com/products/nexpose/) (.xml)**
 - **[OpenVAS](https://www.openvas.org/) (.xml)**
+- **[Docker](https://docs.docker.com/scout/) (.json)**:
+  - ```$ docker scout cves <image> --format sarif --output image_scan.json```
 
 
 ## 🚀 Usage
@@ -47,7 +49,7 @@ $ python sploitscan.py CVE-YYYY-NNNNN
 $ python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
 ```
 
-**Optional: Import functionality. Specify the type: 'nessus', 'nexpose' or 'openvas' and import file.**
+**Optional: Import functionality. Specify the type: 'nessus', 'nexpose', 'openvas' or 'docker' and import file.**
 
 ```bash
 $ python sploitscan.py --import-file path/to/yourfile.nessus --type nessus
@@ -88,6 +90,9 @@ The Patching Prioritization System in SploitScan provides a strategic approach t
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 
 ## 📆 Changelog
+
+### [06. May 2024] - Version 0.6.1
+- **Import File Capabilities**: Added support for importing vulnerability data directly from Docker Scout scan files.
 
 ### [05. May 2024] - Version 0.6
 - **Import File Capabilities**: Added support for importing vulnerability data directly from Nessus, Nexpose, and OpenVAS scan files.

@@ -37,11 +37,17 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .SH 📁 Supported Vulnerability Scanner Import
 .RS
 .IP \(bu 2
-\fBNessus \[la]https://www.tenable.com/products/nessus\[ra] (.nessus)\fP: Import vulnerability data from Tenable Nessus.
+\fBNessus \[la]https://www.tenable.com/products/nessus\[ra] (.nessus)\fP
 .IP \(bu 2
-\fBNexpose \[la]https://www.rapid7.com/products/nexpose/\[ra] (.xml)\fP: Integrate results from Rapid7 Nexpose scans.
+\fBNexpose \[la]https://www.rapid7.com/products/nexpose/\[ra] (.xml)\fP
 .IP \(bu 2
-\fBOpenVAS \[la]https://www.openvas.org/\[ra] (.xml)\fP: Use Greenbone OpenVAS scan reports to feed into SploitScan.
+\fBOpenVAS \[la]https://www.openvas.org/\[ra] (.xml)\fP
+.IP \(bu 2
+\fBDocker \[la]https://docs.docker.com/scout/\[ra] (.json)\fP:
+.RS
+.IP \(bu 2
+\fB\fC$ docker scout cves <image> \-\-format sarif \-\-output image_scan.json\fR
+.RE
 .RE
 .SH 🚀 Usage
 .PP
@@ -61,7 +67,7 @@ $ python sploitscan.py CVE\-YYYY\-NNNNN CVE\-YYYY\-NNNNN
 .fi
 .RE
 .PP
-\fBOptional: Import functionality. Specify the type: 'nessus', 'nexpose' or 'openvas' and import file.\fP
+\fBOptional: Import functionality. Specify the type: 'nessus', 'nexpose', 'openvas' or 'docker' and import file.\fP
 .PP
 .RS
 .nf
@@ -115,6 +121,11 @@ D: CVSS score < 6.0 and EPSS score < 0.2. Lower severity and lower probability o
 .PP
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 .SH 📆 Changelog
+.SS [06. May 2024] \- Version 0.6.1
+.RS
+.IP \(bu 2
+\fBImport File Capabilities\fP: Added support for importing vulnerability data directly from Docker Scout scan files.
+.RE
 .SS [05. May 2024] \- Version 0.6
 .RS
 .IP \(bu 2

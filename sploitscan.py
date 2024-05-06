@@ -10,7 +10,7 @@ import re
 import xml.etree.ElementTree as ET
 from tabulate import tabulate
 
-VERSION = "0.6"
+VERSION = "0.6.1"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -378,6 +378,8 @@ def import_vulnerability_data(file_path, file_type):
         return import_nexpose(file_path)
     elif file_type == "openvas":
         return import_openvas(file_path)
+    elif file_type == "docker":
+        return import_docker(file_path)
     else:
         print(f"❌ Unsupported file type: {file_type}")
         return []
@@ -472,6 +474,34 @@ def import_openvas(file_path):
 
     return cve_ids
 
+def import_docker(file_path):
+    cve_ids = []
+
+    if not os.path.exists(file_path):
+        print(f"❌ Error: The file '{file_path}' does not exist.")
+        return cve_ids
+
+    try:
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+
+        runs = data.get('runs', [])
+        for run in runs:
+            rules = run.get('tool', {}).get('driver', {}).get('rules', [])
+            for rule in rules:
+                cve_id = rule.get('id', '')
+                if cve_id.startswith('CVE-'):
+                    cve_ids.append(cve_id)
+
+        unique_cve_ids = list(set(cve_ids))
+        print(f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{file_path}'.\n")
+        return unique_cve_ids
+    except json.JSONDecodeError as e:
+        print(f"❌ Error parsing the Docker Scout file '{file_path}': {e}")
+    except Exception as e:
+        print(f"❌ An unexpected error occurred while processing '{file_path}': {e}")
+
+    return cve_ids
 
 def is_valid_cve_id(cve_id):
     return re.match(r"CVE-\d{4}-\d{4,7}$", cve_id) is not None
@@ -658,8 +688,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "-t",
         "--type",
-        choices=["nessus", "nexpose", "openvas"],
-        help="Specify the type of the import file: 'nessus', 'nexpose', or 'openvas'.",
+        choices=["nessus", "nexpose", "openvas", "docker"],
+        help="Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.",
     )
     parser.add_argument(
         "-i",
