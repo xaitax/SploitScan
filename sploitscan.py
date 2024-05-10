@@ -129,6 +129,7 @@ def fetch_cisa_data():
         return response.json()
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching data from CISA: {e}")
+        return None
 
 
 def display_cisa_status(cve_id, cisa_data):
@@ -155,6 +156,7 @@ def fetch_github_data(base_url, params=None):
         return response.json()
     except requests.exceptions.RequestException as e:
         print(f"❌ An error occurred fetching PoC data: {e}")
+        return None
 
 
 def display_github_data(data):
@@ -446,32 +448,28 @@ def import_nexpose(file_path):
 
 def import_openvas(file_path):
     cve_ids = []
-
     if not os.path.exists(file_path):
-        print("❌ Error: The file does not exist.")
+        print(f"❌ Error: The file '{file_path}' does not exist.")
         return cve_ids
 
     try:
         tree = ET.parse(file_path)
         root = tree.getroot()
-        cve_elements = root.findall(".//cve")
-        for cve_element in cve_elements:
-            cve_text = cve_element.text.strip()
-            if cve_text and cve_text != "NOCVE":
-                split_cves = cve_text.split(",")
-                for cve in split_cves:
-                    cve = cve.strip()
-                    if cve.startswith("CVE-"):
-                        cve_ids.append(cve)
 
-        unique_cve_ids = list(set(cve_ids))
+        for ref in root.findall(".//ref[@type='cve']"):
+            cve_id = ref.attrib.get('id')
+            if cve_id:
+                cve_ids.append(cve_id)
+
+        unique_cve_ids = sorted(set(cve_ids))
+
         print(f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{file_path}'.\n")
         return unique_cve_ids
-    except ET.ParseError as e:
-        print(f"❌ Error parsing the file: {e}")
-    except Exception as e:
-        print(f"❌ An unexpected error occurred: {e}")
 
+    except ET.ParseError as e:
+        print(f"❌ Error parsing the OpenVAS file '{file_path}': {e}")
+    except Exception as e:
+        print(f"❌ An unexpected error occurred while processing '{file_path}': {e}")
     return cve_ids
 
 def import_docker(file_path):
