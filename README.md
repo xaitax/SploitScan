@@ -21,6 +21,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **[GitHub](https://poc-in-github.motikan2010.net/)**
 - **[ExploitDB](https://www.exploit-db.com/)**
 - **[VulnCheck](https://vulncheck.com/)** (requires a **free** VulnCheck API key)
+- **[Nuclei](https://github.com/projectdiscovery/nuclei-templates)**
 
 ## 📁 Supported Vulnerability Scanner Import
 
@@ -91,6 +92,11 @@ This system assists users in making informed decisions on which vulnerabilities 
 
 ## 📆 Changelog
 
+### [11. May 2024] - Version 0.7
+- **Nuclei Template Integration**: Added support for discovery of Nuclei templates, enhancing vulnerability data sources.
+- **Enhanced Display Functions**: Refined visual output across all display functions for consistency and readability.
+- **General Improvements**: Various bug fixes and performance improvements such as improved error handling.
+
 ### [06. May 2024] - Version 0.6.1
 - **Import File Capabilities**: Added support for importing vulnerability data directly from Docker Scout scan files.
 
@@ -146,6 +152,8 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 - [NIST NVD](https://nvd.nist.gov/developers/vulnerabilities)
 - [FIRST EPSS](https://www.first.org/epss/api)
 - [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
+- [ProjectDiscovery Nuclei](https://github.com/projectdiscovery/nuclei-templates)
+- [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
 - [VulnCheck](https://vulncheck.com/)
 - [ExploitDB](https://www.exploit-db.com/)
-- [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
+

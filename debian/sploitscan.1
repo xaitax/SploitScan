@@ -1,4 +1,4 @@
-.TH SploitScan 1 "Version 0.6" "SploitScan user manual"
+.TH SploitScan 1 "Version 0.7" "SploitScan user manual"
 .SH NAME
 \fBSploitScan\fP - A tool to fetch and display vulnerability information and public exploits for given CVE IDs.
 .SH 📜 Description
@@ -33,6 +33,8 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 \fBExploitDB \[la]https://www.exploit-db.com/\[ra]\fP
 .IP \(bu 2
 \fBVulnCheck \[la]https://vulncheck.com/\[ra]\fP (requires a \fBfree\fP VulnCheck API key)
+.IP \(bu 2
+\fBNuclei \[la]https://github.com/projectdiscovery/nuclei-templates\[ra]\fP
 .RE
 .SH 📁 Supported Vulnerability Scanner Import
 .RS
@@ -121,6 +123,15 @@ D: CVSS score < 6.0 and EPSS score < 0.2. Lower severity and lower probability o
 .PP
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 .SH 📆 Changelog
+.SS [11. May 2024] \- Version 0.7
+.RS
+.IP \(bu 2
+\fBNuclei Template Integration\fP: Added support for discovery of Nuclei templates, enhancing vulnerability data sources.
+.IP \(bu 2
+\fBEnhanced Display Functions\fP: Refined visual output across all display functions for consistency and readability.
+.IP \(bu 2
+\fBGeneral Improvements\fP: Various bug fixes and performance improvements such as improved error handling.
+.RE
 .SS [06. May 2024] \- Version 0.6.1
 .RS
 .IP \(bu 2
@@ -207,9 +218,11 @@ FIRST EPSS \[la]https://www.first.org/epss/api\[ra]
 .IP \(bu 2
 CISA Known Exploited Vulnerabilities Catalog \[la]https://www.cisa.gov/known-exploited-vulnerabilities-catalog\[ra]
 .IP \(bu 2
+ProjectDiscovery Nuclei \[la]https://github.com/projectdiscovery/nuclei-templates\[ra]
+.IP \(bu 2
+nomi\-sec PoC\-in\-GitHub API \[la]https://poc-in-github.motikan2010.net/\[ra]
+.IP \(bu 2
 VulnCheck \[la]https://vulncheck.com/\[ra]
 .IP \(bu 2
 ExploitDB \[la]https://www.exploit-db.com/\[ra]
-.IP \(bu 2
-nomi\-sec PoC\-in\-GitHub API \[la]https://poc-in-github.motikan2010.net/\[ra]
 .RE
