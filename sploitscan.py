@@ -252,8 +252,7 @@ def fetch_vulncheck_data(cve_id):
     config = load_config()
     vulncheck_api_key = config.get("vulncheck_api_key")
     if not vulncheck_api_key:
-        print("❌ API key for VulnCheck is not configured correctly.")
-        return None
+        return {"error": "API key for VulnCheck is not configured correctly."}
 
     url = VULNCHECK_API_URL
     headers = {
@@ -267,52 +266,52 @@ def fetch_vulncheck_data(cve_id):
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        print(f"❌ Error fetching data from VulnCheck: {e}")
-        return None
+        return {"error": f"❌ Error fetching data from VulnCheck: {e}"}
 
 
 def display_vulncheck_data(vulncheck_data):
     print("┌───[ " + BLUE + f"💥 VulnCheck Exploits / PoC " + ENDC + "]")
-    if vulncheck_data and "data" in vulncheck_data:
-        entries = []
-        for item in vulncheck_data["data"]:
-            if "vulncheck_xdb" in item:
-                for xdb in item["vulncheck_xdb"]:
-                    xdb_id = xdb.get("xdb_id", "N/A")
-
-                    date_added = xdb.get("date_added", "N/A")
-                    if date_added != "N/A":
-                        try:
-                            date_added = datetime.datetime.fromisoformat(
-                                date_added.rstrip("Z")
-                            ).strftime("%Y-%m-%d")
-                        except ValueError:
-                            pass
-
-                    clone_ssh_url = xdb.get("clone_ssh_url", "")
-                    github_url = clone_ssh_url.replace(
-                        "git@github.com:", "https://github.com/"
-                    ).replace(".git", "")
-
-                    entries.append((xdb_id, date_added, github_url))
-
-        if entries:
-            for index, (xdb_id, date_added, github_url) in enumerate(
-                sorted(entries, key=lambda x: x[1], reverse=True)
-            ):
-                print("|")
-                print(f"├ ID:          {xdb_id}")
-                print(f"├ Date:        {date_added}")
-                if index == len(entries) - 1:
-                    print(f"└ URL:         {github_url}\n")
-                else:
-                    print(f"└ URL:         {github_url}")
-        else:
+    if vulncheck_data:
+        if "error" in vulncheck_data:
             print("|")
-            print("└ ❌ No exploit data found.\n")
+            print(f"└ ❌ {vulncheck_data['error']}\n")
+        elif "data" in vulncheck_data:
+            entries = []
+            for item in vulncheck_data["data"]:
+                if "vulncheck_xdb" in item:
+                    for xdb in item["vulncheck_xdb"]:
+                        xdb_id = xdb.get("xdb_id", "N/A")
+                        date_added = xdb.get("date_added", "N/A")
+                        if date_added != "N/A":
+                            try:
+                                date_added = datetime.datetime.fromisoformat(
+                                    date_added.rstrip("Z")
+                                ).strftime("%Y-%m-%d")
+                            except ValueError:
+                                pass
+                        clone_ssh_url = xdb.get("clone_ssh_url", "")
+                        github_url = clone_ssh_url.replace(
+                            "git@github.com:", "https://github.com/"
+                        ).replace(".git", "")
+                        entries.append((xdb_id, date_added, github_url))
+
+            if entries:
+                for index, (xdb_id, date_added, github_url) in enumerate(
+                    sorted(entries, key=lambda x: x[1], reverse=True)
+                ):
+                    print("|")
+                    print(f"├ ID:          {xdb_id}")
+                    print(f"├ Date:        {date_added}")
+                    if index == len(entries) - 1:
+                        print(f"└ URL:         {github_url}\n")
+                    else:
+                        print(f"└ URL:         {github_url}")
+            else:
+                print("|")
+                print("└ ❌ No exploit data found.\n")
     else:
         print("|")
-        print("└ ❌ No exploit data found.\n")
+        print("└ ❌ No data received from VulnCheck.\n")
 
 
 def fetch_exploitdb_data(cve_id):
