@@ -11,7 +11,7 @@ import re
 import xml.etree.ElementTree as ET
 from tabulate import tabulate
 
-VERSION = "0.7"
+VERSION = "0.7.1"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -19,6 +19,7 @@ YELLOW = "\033[93m"
 ENDC = "\033[0m"
 
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={cve_id}"
+CVE_GITHUB_URL = "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves"
 EPSS_API_URL = "https://api.first.org/data/v1/epss?cve={cve_id}"
 CISA_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 NUCLEI_URL = (
@@ -49,6 +50,38 @@ def fetch_nvd_data(cve_id):
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching data from NVD: {e}")
         return {}
+
+
+def fetch_github_data(cve_id):
+    url = f"{CVE_GITHUB_URL}/{cve_id[:4]}/{cve_id[4:7]}xx/{cve_id}.json"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching data from GitHub: {e}")
+        return {}
+
+
+def get_updated_cve_data(cve_id):
+    nvd_data = fetch_nvd_data(cve_id)
+    github_data = fetch_github_data(cve_id)
+
+    if not nvd_data and not github_data:
+        return {}
+
+    if nvd_data and github_data:
+        nvd_last_modified = nvd_data.get("vulnerabilities", [{}])[0].get("lastModifiedDate", "")
+        github_last_modified = github_data.get("lastModifiedDate", "")
+
+        if nvd_last_modified > github_last_modified:
+            return nvd_data
+        else:
+            return github_data
+    elif nvd_data:
+        return nvd_data
+    else:
+        return github_data
 
 
 def display_nvd_data(cve_data):
