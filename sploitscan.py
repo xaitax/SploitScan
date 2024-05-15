@@ -28,6 +28,7 @@ NUCLEI_URL = (
 GITHUB_API_URL = "https://poc-in-github.motikan2010.net/api/v1/"
 VULNCHECK_API_URL = "https://api.vulncheck.com/v3/index/vulncheck-kev"
 EXPLOITDB_URL = "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv?ref_type=heads"
+PACKETSTORM_URL = "https://packetstormsecurity.com/search/?q={cve_id}"
 
 CVSS_THRESHOLD = 6.0
 EPSS_THRESHOLD = 0.2
@@ -402,6 +403,29 @@ def display_exploitdb_data(exploitdb_data, cve_id):
         print("└ ❌ No exploit data found.\n")
 
 
+def fetch_packetstorm_data(cve_id):
+    packetstorm_url = PACKETSTORM_URL.format(cve_id=cve_id)
+    try:
+        response = requests.get(packetstorm_url)
+        response.raise_for_status()
+        if "No Results Found" not in response.text:
+            return {"packetstorm_url": packetstorm_url}
+        return {}
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching data from PacketStorm: {e}")
+        return {}
+    
+
+def display_packetstorm_data(packetstorm_data):
+    print("┌───[ " + BLUE + f"💥 PacketStorm Exploits " + ENDC + "]")
+    if packetstorm_data:
+        print("|")
+        print(f"└ URL: {packetstorm_data['packetstorm_url']}\n")
+    else:
+        print("|")
+        print("└ ❌ No exploit data found.\n")    
+
+
 def display_nvd_references(cve_data):
     print("┌───[ " + BLUE + f"📚 Further References " + ENDC + "]")
     if (
@@ -747,6 +771,8 @@ def collect_cve_data(cve_id):
 
     exploitdb_data = fetch_exploitdb_data(cve_id)
     display_exploitdb_data(exploitdb_data, cve_id)
+    packetstorm_data = fetch_packetstorm_data(cve_id)
+    display_packetstorm_data(packetstorm_data)
 
     priority = calculate_priority(
         cve_id,
@@ -780,6 +806,7 @@ def collect_cve_data(cve_id):
             "GitHub Data": github_data,
             "VulnCheck Data": vulncheck_data,
             "ExploitDB Data": exploitdb_data,
+            "PacketStorm Data": packetstorm_data,
             "Priority": {"Priority": priority},
         }
     )
