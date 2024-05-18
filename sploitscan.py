@@ -11,7 +11,7 @@ import re
 import xml.etree.ElementTree as ET
 from tabulate import tabulate
 
-VERSION = "0.7"
+VERSION = "0.7.1"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -19,6 +19,7 @@ YELLOW = "\033[93m"
 ENDC = "\033[0m"
 
 NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={cve_id}"
+CVE_GITHUB_URL = "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves"
 EPSS_API_URL = "https://api.first.org/data/v1/epss?cve={cve_id}"
 CISA_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 NUCLEI_URL = (
@@ -27,6 +28,7 @@ NUCLEI_URL = (
 GITHUB_API_URL = "https://poc-in-github.motikan2010.net/api/v1/"
 VULNCHECK_API_URL = "https://api.vulncheck.com/v3/index/vulncheck-kev"
 EXPLOITDB_URL = "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv?ref_type=heads"
+PACKETSTORM_URL = "https://packetstormsecurity.com/search/?q={cve_id}"
 
 CVSS_THRESHOLD = 6.0
 EPSS_THRESHOLD = 0.2
@@ -49,6 +51,38 @@ def fetch_nvd_data(cve_id):
     except requests.exceptions.RequestException as e:
         print(f"❌ Error fetching data from NVD: {e}")
         return {}
+
+
+def fetch_github_data(cve_id):
+    url = f"{CVE_GITHUB_URL}/{cve_id[:4]}/{cve_id[4:7]}xx/{cve_id}.json"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching data from GitHub: {e}")
+        return {}
+
+
+def get_updated_cve_data(cve_id):
+    nvd_data = fetch_nvd_data(cve_id)
+    github_data = fetch_github_data(cve_id)
+
+    if not nvd_data and not github_data:
+        return {}
+
+    if nvd_data and github_data:
+        nvd_last_modified = nvd_data.get("vulnerabilities", [{}])[0].get("lastModifiedDate", "")
+        github_last_modified = github_data.get("lastModifiedDate", "")
+
+        if nvd_last_modified > github_last_modified:
+            return nvd_data
+        else:
+            return github_data
+    elif nvd_data:
+        return nvd_data
+    else:
+        return github_data
 
 
 def display_nvd_data(cve_data):
@@ -369,6 +403,29 @@ def display_exploitdb_data(exploitdb_data, cve_id):
         print("└ ❌ No exploit data found.\n")
 
 
+def fetch_packetstorm_data(cve_id):
+    packetstorm_url = PACKETSTORM_URL.format(cve_id=cve_id)
+    try:
+        response = requests.get(packetstorm_url)
+        response.raise_for_status()
+        if "No Results Found" not in response.text:
+            return {"packetstorm_url": packetstorm_url}
+        return {}
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Error fetching data from PacketStorm: {e}")
+        return {}
+    
+
+def display_packetstorm_data(packetstorm_data):
+    print("┌───[ " + BLUE + f"💥 PacketStorm Exploits " + ENDC + "]")
+    if packetstorm_data:
+        print("|")
+        print(f"└ URL: {packetstorm_data['packetstorm_url']}\n")
+    else:
+        print("|")
+        print("└ ❌ No exploit data found.\n")    
+
+
 def display_nvd_references(cve_data):
     print("┌───[ " + BLUE + f"📚 Further References " + ENDC + "]")
     if (
@@ -478,7 +535,7 @@ def import_nessus(file_path):
         for report_item in root.findall(".//ReportItem"):
             cves = report_item.findall("cve")
             for cve in cves:
-                cve_id = cve.text.strip()
+                cve_id = cve.text.strip().upper()  # Convert to uppercase
                 if is_valid_cve_id(cve_id):
                     cve_ids.append(cve_id)
         unique_cve_ids = list(set(cve_ids))
@@ -509,7 +566,8 @@ def import_nexpose(file_path):
         for link in url_links:
             link_title = link.get("LinkTitle")
             if link_title and link_title.startswith("CVE-"):
-                cve_ids.append(link_title)
+                cve_id = link_title.upper()  # Convert to uppercase
+                cve_ids.append(cve_id)
 
         unique_cve_ids = list(set(cve_ids))
         print(
@@ -524,7 +582,6 @@ def import_nexpose(file_path):
 
     return cve_ids
 
-
 def import_openvas(file_path):
     cve_ids = []
     if not os.path.exists(file_path):
@@ -536,7 +593,7 @@ def import_openvas(file_path):
         root = tree.getroot()
 
         for ref in root.findall(".//ref[@type='cve']"):
-            cve_id = ref.attrib.get("id")
+            cve_id = ref.attrib.get("id").upper()  # Convert to uppercase
             if cve_id:
                 cve_ids.append(cve_id)
 
@@ -571,6 +628,7 @@ def import_docker(file_path):
             for rule in rules:
                 cve_id = rule.get("id", "")
                 if cve_id.startswith("CVE-"):
+                    cve_id = cve_id.upper()  # Convert to uppercase
                     cve_ids.append(cve_id)
 
         unique_cve_ids = list(set(cve_ids))
@@ -587,8 +645,8 @@ def import_docker(file_path):
 
 
 def is_valid_cve_id(cve_id):
+    cve_id = cve_id.upper()  # Convert to uppercase
     return re.match(r"CVE-\d{4}-\d{4,7}$", cve_id) is not None
-
 
 def generate_filename(cve_ids, extension):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -666,6 +724,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         return
 
     for cve_id in cve_ids:
+        cve_id = cve_id.upper()  # Convert to uppercase
         if not is_valid_cve_id(cve_id):
             print(
                 f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN."
@@ -712,6 +771,8 @@ def collect_cve_data(cve_id):
 
     exploitdb_data = fetch_exploitdb_data(cve_id)
     display_exploitdb_data(exploitdb_data, cve_id)
+    packetstorm_data = fetch_packetstorm_data(cve_id)
+    display_packetstorm_data(packetstorm_data)
 
     priority = calculate_priority(
         cve_id,
@@ -745,6 +806,7 @@ def collect_cve_data(cve_id):
             "GitHub Data": github_data,
             "VulnCheck Data": vulncheck_data,
             "ExploitDB Data": exploitdb_data,
+            "PacketStorm Data": packetstorm_data,
             "Priority": {"Priority": priority},
         }
     )
