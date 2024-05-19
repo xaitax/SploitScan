@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CVE Report</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css">
+    <style>
+        @import url('https://rsms.me/inter/inter.css');
+
+        :root {
+            --tblr-font-sans-serif: Inter, -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif !important;
+            --main-color: #2c3e50;
+            --info-color: #a1b8c7;
+        }
+
+        body {
+            font-family: var(--tblr-font-sans-serif);
+        }
+
+        .page-title {
+            color: var(--main-color);
+        }
+
+        .card-header-light {
+            background-color: var(--info-color);
+            color: #fff;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.15rem;
+            vertical-align: top;
+            border-top: none;
+        }
+
+        .table th {
+            text-align: left;
+        }
+
+        .table-sm th,
+        .table-sm td {
+            border: none;
+        }
+
+        .table-sm th:first-child,
+        .table-sm td:first-child {
+            width: 200px;
+            text-align: left;
+        }
+
+        .table {
+            table-layout: fixed;
+        }
+
+        .icon {
+            margin-right: 0.5rem;
+        }
+
+        .mb-3 {
+            margin-bottom: 1.5rem !important;
+        }
+
+        .mb-4 {
+            margin-bottom: 2rem !important;
+        }
+
+        h4 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page">
+        <div class="container-xl">
+            <div class="page-header page-header-border">
+                <div class="container-fluid">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h2 class="page-title">SploitScan</h2>
+                            <div class="text-secondary mt-1">CVE Report</div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="btn-list">
+                                <a href="https://github.com/xaitax/SploitScan" class="btn">
+                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                        class="icon icon-tabler icon-tabler-brand-github" width="24" height="24"
+                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path
+                                            d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0 -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6 -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0 -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5" />
+                                    </svg>GitHub
+                                </a>
+                                <a href="https://x.com/xaitax" class="btn d-none d-md-inline-flex">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-brand-x"
+                                        width="24" height="24" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50"
+                                        fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                                        <path d="M4 4l11.733 16h4.267l-11.733 -16z" />
+                                        <path d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772" />
+                                    </svg>Twitter/X
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <br />
+
+            {% for cve in cve_data %}
+            <div class="card mb-4">
+                <div class="card-header card-header-light">
+                    <h3 class="card-title">
+                        <a name="{{ cve['CVE ID'] }}"></a>{{ cve['CVE ID'] }}
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h4><span class="icon">🔍</span> Vulnerability Information</h4>
+                        <p>{{ cve['NVD Data']['vulnerabilities'][0]['cve']['descriptions'][0]['value'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') else 'N/A' }}</p>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>Published</td>
+                                    <td>{{ cve['NVD Data']['vulnerabilities'][0]['cve']['published'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Base Score</td>
+                                    <td>
+                                        {{ cve['NVD Data']['vulnerabilities'][0]['cve']['metrics']['cvssMetricV31'][0]['cvssData']['baseScore'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') and cve['NVD Data']['vulnerabilities'][0]['cve']['metrics'].get('cvssMetricV31') else 'N/A' }}
+                                        ({{ cve['NVD Data']['vulnerabilities'][0]['cve']['metrics']['cvssMetricV31'][0]['cvssData']['baseSeverity'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') and cve['NVD Data']['vulnerabilities'][0]['cve']['metrics'].get('cvssMetricV31') else 'N/A' }})
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Vector</td>
+                                    <td>{{ cve['NVD Data']['vulnerabilities'][0]['cve']['metrics']['cvssMetricV31'][0]['cvssData']['vectorString'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') and cve['NVD Data']['vulnerabilities'][0]['cve']['metrics'].get('cvssMetricV31') else 'N/A' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">♾️</span> Exploit Prediction Score (EPSS)</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>Score</td>
+                                    <td>{{ cve['EPSS Data']['data'][0]['epss'] if cve['EPSS Data'] and cve['EPSS Data'].get('data') else 'N/A' }}% Probability of exploitation</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">🛡️</span> CISA KEV Catalog</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>Listed</td>
+                                    <td>{{ cve['CISA Data']['cisa_status'] if cve['CISA Data'] else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Ransomware</td>
+                                    <td>{{ cve['CISA Data']['ransomware_use'] if cve['CISA Data'] else 'N/A' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">💣</span> GitHub Exploits</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for poc in cve['GitHub Data']['pocs'] %}
+                                <tr>
+                                    <td>{{ poc['created_at']|datetimeformat }}</td>
+                                    <td><a href="{{ poc['html_url'] }}" target="_blank">{{ poc['html_url'] }}</a></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2">N/A</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">💥</span> VulnCheck Exploits</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for item in cve['VulnCheck Data']['data'] %}
+                                {% for xdb in item['vulncheck_xdb'] %}
+                                <tr>
+                                    <td>{{ xdb['date_added']|datetimeformat }}</td>
+                                    <td><a href="{{ xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '') }}" target="_blank">{{ xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '') }}</a></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2">N/A</td>
+                                </tr>
+                                {% endfor %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">👾</span> Exploit-DB Exploits</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for item in cve['ExploitDB Data'] %}
+                                <tr>
+                                    <td>{{ item['date']|datetimeformat }}</td>
+                                    <td><a href="https://www.exploit-db.com/exploits/{{ item['id'] }}" target="_blank">https://www.exploit-db.com/exploits/{{ item['id'] }}</a></td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="2">N/A</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">🎆</span> PacketStorm Exploits</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>URL</td>
+                                    <td>
+                                        <a href="{{ cve['PacketStorm Data']['packetstorm_url'] }}" target="_blank">{{ cve['PacketStorm Data']['packetstorm_url'] }}</a>
+                                    </td>
+                                </tr>
+                                {% if not cve['PacketStorm Data'] or not cve['PacketStorm Data']['packetstorm_url'] %}
+                                <tr>
+                                    <td colspan="2">N/A</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">⚛️</span> Nuclei Template</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>URL</td>
+                                    <td>
+                                        <a href="https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{{ cve['Nuclei Data']['file_path'] if cve['Nuclei Data'] else '#' }}" target="_blank">
+                                            {{ cve['Nuclei Data']['file_path'] if cve['Nuclei Data'] else 'N/A' }}
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">⚠️</span> Patching Priority Rating</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>Priority</td>
+                                    <td>{{ cve['Priority']['Priority'] if cve['Priority'] and cve['Priority']['Priority'] else 'N/A' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">📚</span> Further References</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                {% for ref in cve['NVD Data']['vulnerabilities'][0]['cve']['references'] %}
+                                <ul>
+                                    <li><a href="{{ ref['url'] }}" target="_blank">{{ ref['url'] }}</a></li>
+                                </ul>
+                                {% else %}
+                                <tr>
+                                    <td>N/A</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll('td').forEach(function (td) {
+                let text = td.textContent.trim();
+                if (text.includes('T') && !isNaN(Date.parse(text))) {
+                    let date = new Date(text);
+                    td.textContent = date.toISOString().split('T')[0];
+                }
+            });
+
+            document.querySelectorAll('td').forEach(function (td) {
+                let content = td.textContent.trim();
+                let match = content.match(/(\d+(\.\d+)?)(?=% Probability of exploitation)/);
+                if (match) {
+                    let score = parseFloat(match[0]);
+                    if (!isNaN(score)) {
+                        td.textContent = `${(score * 100).toFixed(2)}% Probability of exploitation`;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

@@ -11,7 +11,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **Public Exploits Aggregation**: Gathers publicly available exploits, enhancing the understanding of vulnerabilities.
 - **CISA KEV**: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
 - **Patching Priority System**: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
-- **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to JSON and CSV formats.
+- **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to HTML, JSON and CSV formats.
 - **Vulnerability Scanner Import**: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
 - **User-Friendly Interface**: Easy to use, providing clear and concise information.
 - **Comprehensive Security Tool**: Ideal for quick security assessments and staying informed about recent vulnerabilities.
@@ -21,6 +21,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **[GitHub](https://poc-in-github.motikan2010.net/)**
 - **[ExploitDB](https://www.exploit-db.com/)**
 - **[VulnCheck](https://vulncheck.com/)** (requires a **free** VulnCheck API key)
+- **[Packet Storm](https://packetstormsecurity.com/)**
 - **[Nuclei](https://github.com/projectdiscovery/nuclei-templates)**
 
 ## 📁 Supported Vulnerability Scanner Import
@@ -56,10 +57,10 @@ $ python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
 $ python sploitscan.py --import-file path/to/yourfile.nessus --type nessus
 ```
 
-**Optional: Export the results to a JSON or CSV file. Specify the format: 'json' or 'csv'.**
+**Optional: Export the results to a JSON, CSV or HTML file. Specify the format: 'json', 'csv' or 'html'.**
 
 ```bash
-$ python sploitscan.py CVE-YYYY-NNNNN -e JSON
+$ python sploitscan.py CVE-YYYY-NNNNN -e HTML
 ```
 
 **Docker** 
@@ -91,6 +92,12 @@ The Patching Prioritization System in SploitScan provides a strategic approach t
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 
 ## 📆 Changelog
+
+### [18. May 2024] - Version 0.8
+- **HTML Export Functionality**: Introduced the ability to export vulnerability data to HTML reports.
+- **Packet Storm Integration**: Added support for fetching exploit data from Packet Storm.
+- **Enhanced Display Functions**: Added CVE_GITHUB_URL as CVE source, and functions to output the most updated CVE source.
+- **Code Refactoring**: Refactored code to improve maintainability and readability due to the growing code base.
 
 ### [11. May 2024] - Version 0.7
 - **Nuclei Template Integration**: Added support for discovery of Nuclei templates, enhancing vulnerability data sources.
@@ -140,6 +147,7 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 - [bcoles](https://github.com/bcoles) for bugfixes.
 - [Javier Álvarez](https://github.com/jalvarezz13) for bugfixes.
 - [Romullo](https://github.com/Romullo) for ideas & suggestions.
+- [davidfortytwo](https://github.com/davidfortytwo) for enhancements (Updated CVE retrieval and PacketStorm addition).
 
 ## 📌 Author
 
@@ -147,7 +155,7 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 - [URL](https://primepage.de)
 - [Twitter](https://twitter.com/xaitax)
 
-## 👏 Credits
+## 📚 References
 
 - [NIST NVD](https://nvd.nist.gov/developers/vulnerabilities)
 - [FIRST EPSS](https://www.first.org/epss/api)

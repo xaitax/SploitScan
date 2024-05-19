@@ -1,4 +1,4 @@
-.TH SploitScan 1 "Version 0.7" "SploitScan user manual"
+.TH SploitScan 1 "Version 0.8" "SploitScan user manual"
 .SH NAME
 \fBSploitScan\fP - A tool to fetch and display vulnerability information and public exploits for given CVE IDs.
 .SH 📜 Description
@@ -17,7 +17,7 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .IP \(bu 2
 \fBPatching Priority System\fP: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 .IP \(bu 2
-\fBMulti\-CVE Support and Export Options\fP: Supports multiple CVEs in a single run and allows exporting the results to JSON and CSV formats.
+\fBMulti\-CVE Support and Export Options\fP: Supports multiple CVEs in a single run and allows exporting the results to HTML, JSON and CSV formats.
 .IP \(bu 2
 \fBVulnerability Scanner Import\fP: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
 .IP \(bu 2
@@ -33,6 +33,8 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 \fBExploitDB \[la]https://www.exploit-db.com/\[ra]\fP
 .IP \(bu 2
 \fBVulnCheck \[la]https://vulncheck.com/\[ra]\fP (requires a \fBfree\fP VulnCheck API key)
+.IP \(bu 2
+\fBPacket Storm \[la]https://packetstormsecurity.com/\[ra]\fP
 .IP \(bu 2
 \fBNuclei \[la]https://github.com/projectdiscovery/nuclei-templates\[ra]\fP
 .RE
@@ -52,6 +54,10 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .RE
 .RE
 .SH 🚀 Usage
+.PP
+[image](\[la]https://github.com/xaitax/SploitScan/assets/5014849/b8701a98-dd8f-4099-bfa2-8f648bd5f4f2\[ra])
+.PP
+<hr>
 .PP
 \fBRegular\fP:
 .PP
@@ -123,6 +129,17 @@ D: CVSS score < 6.0 and EPSS score < 0.2. Lower severity and lower probability o
 .PP
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 .SH 📆 Changelog
+.SS [18. May 2024] \- Version 0.8
+.RS
+.IP \(bu 2
+\fBHTML Export Functionality\fP: Introduced the ability to export vulnerability data to HTML reports.
+.IP \(bu 2
+\fBPacket Storm Integration\fP: Added support for fetching exploit data from Packet Storm.
+.IP \(bu 2
+\fBEnhanced Display Functions\fP: Added CVE\fIGITHUB\fPURL as CVE source, and functions to output the most updated CVE source.
+.IP \(bu 2
+\fBCode Refactoring\fP: Refactored code to improve maintainability and readability due to the growing code base.
+.RE
 .SS [11. May 2024] \- Version 0.7
 .RS
 .IP \(bu 2
@@ -203,13 +220,15 @@ bcoles \[la]https://github.com/bcoles\[ra] for bugfixes.
 Javier Álvarez \[la]https://github.com/jalvarezz13\[ra] for bugfixes.
 .IP \(bu 2
 Romullo \[la]https://github.com/Romullo\[ra] for ideas & suggestions.
+.IP \(bu 2
+davidfortytwo \[la]https://github.com/davidfortytwo\[ra] for enhancements (Updated CVE retrieval and PacketStorm addition).
 .RE
 .SH 📌 Author
 .PP
 \fBAlexander Hagenah\fP
 \- URL \[la]https://primepage.de\[ra]
 \- Twitter \[la]https://twitter.com/xaitax\[ra]
-.SH 👏 Credits
+.SH 📚 References
 .RS
 .IP \(bu 2
 NIST NVD \[la]https://nvd.nist.gov/developers/vulnerabilities\[ra]
