@@ -379,10 +379,10 @@ def calculate_priority(
         pass
     in_cisa_kev = any(
         vuln["cveID"] == cve_id for vuln in cisa_data.get("vulnerabilities", [])
-    )
+    ) if cisa_data else False
     has_public_exploits = (
-        bool(github_data.get("pocs"))
-        or bool(vulncheck_data.get("data"))
+        bool(github_data.get("pocs")) if github_data else False
+        or bool(vulncheck_data.get("data")) if vulncheck_data else False
         or bool(exploitdb_data)
     )
 
