@@ -19,3 +19,12 @@ documentation = "https://github.com/xaitax/SploitScan#readme"
 python = "^3.8"
 requests = "^2.31.0"
 jinja2 = "^3.1.2"
+
+[tool.setuptools.package-dir]
+sploitscan = "sploitscan"
+
+[tool.setuptools.packages.find]
+where = ["sploitscan"]
+
+[tool.setuptools.package-data]
+sploitscan = ["templates/*.html", "config.json"]
