@@ -121,23 +121,23 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <h4><span class="icon">🔍</span> Vulnerability Information</h4>
-                        <p>{{ cve['NVD Data']['vulnerabilities'][0]['cve']['descriptions'][0]['value'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') else 'N/A' }}</p>
+                        <p>{{ cve['CVE Data']['containers']['cna']['descriptions'][0]['value'] if cve['CVE Data'] and cve['CVE Data'].get('containers') else 'N/A' }}</p>
                         <table class="table table-sm">
                             <tbody>
                                 <tr>
                                     <td>Published</td>
-                                    <td>{{ cve['NVD Data']['vulnerabilities'][0]['cve']['published'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') else 'N/A' }}</td>
+                                    <td>{{ cve['CVE Data']['cveMetadata']['datePublished']|datetimeformat if cve['CVE Data'] and cve['CVE Data'].get('cveMetadata') else 'N/A' }}</td>
                                 </tr>
                                 <tr>
                                     <td>Base Score</td>
                                     <td>
-                                        {{ cve['NVD Data']['vulnerabilities'][0]['cve']['metrics']['cvssMetricV31'][0]['cvssData']['baseScore'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') and cve['NVD Data']['vulnerabilities'][0]['cve']['metrics'].get('cvssMetricV31') else 'N/A' }}
-                                        ({{ cve['NVD Data']['vulnerabilities'][0]['cve']['metrics']['cvssMetricV31'][0]['cvssData']['baseSeverity'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') and cve['NVD Data']['vulnerabilities'][0]['cve']['metrics'].get('cvssMetricV31') else 'N/A' }})
+                                        {{ cve['CVE Data']['containers']['cna']['metrics'][0]['cvssV3_1']['baseScore'] if cve['CVE Data'] and cve['CVE Data'].get('containers') and cve['CVE Data']['containers']['cna']['metrics'] else 'N/A' }}
+                                        ({{ cve['CVE Data']['containers']['cna']['metrics'][0]['cvssV3_1']['baseSeverity'] if cve['CVE Data'] and cve['CVE Data'].get('containers') and cve['CVE Data']['containers']['cna']['metrics'] else 'N/A' }})
                                     </td>
                                 </tr>
                                 <tr>
                                     <td>Vector</td>
-                                    <td>{{ cve['NVD Data']['vulnerabilities'][0]['cve']['metrics']['cvssMetricV31'][0]['cvssData']['vectorString'] if cve['NVD Data'] and cve['NVD Data'].get('vulnerabilities') and cve['NVD Data']['vulnerabilities'][0]['cve']['metrics'].get('cvssMetricV31') else 'N/A' }}</td>
+                                    <td>{{ cve['CVE Data']['containers']['cna']['metrics'][0]['cvssV3_1']['vectorString'] if cve['CVE Data'] and cve['CVE Data'].get('containers') and cve['CVE Data']['containers']['cna']['metrics'] else 'N/A' }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -266,10 +266,15 @@
                         </table>
                     </div>
                     <div class="mb-3">
+                        <h4><span class="icon">🤖</span> AI-Powered Risk Assessment</h4>
+                        <pre style="white-space: pre-wrap;">{{ cve['Risk Assessment'] }}</pre>
+                    </div>
+                    
+                    <div class="mb-3">
                         <h4><span class="icon">📚</span> Further References</h4>
                         <table class="table table-sm">
                             <tbody>
-                                {% for ref in cve['NVD Data']['vulnerabilities'][0]['cve']['references'] %}
+                                {% for ref in cve['CVE Data']['containers']['cna']['references'] %}
                                 <ul>
                                     <li><a href="{{ ref['url'] }}" target="_blank">{{ ref['url'] }}</a></li>
                                 </ul>
@@ -290,14 +295,6 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll('td').forEach(function (td) {
-                let text = td.textContent.trim();
-                if (text.includes('T') && !isNaN(Date.parse(text))) {
-                    let date = new Date(text);
-                    td.textContent = date.toISOString().split('T')[0];
-                }
-            });
-
-            document.querySelectorAll('td').forEach(function (td) {
                 let content = td.textContent.trim();
                 let match = content.match(/(\d+(\.\d+)?)(?=% Probability of exploitation)/);
                 if (match) {
@@ -309,6 +306,7 @@
             });
         });
     </script>
+    
 </body>
 
 </html>

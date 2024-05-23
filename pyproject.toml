@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "SploitScan"
-version = "0.8.0"
+version = "0.9"
 description = "SploitScan is a sophisticated cybersecurity utility designed to provide detailed information on vulnerabilities and associated exploits."
 authors = ["Alexander Hagenah <ah@primepage.de>"]
 license = "GPL-3.0"
@@ -17,8 +17,9 @@ documentation = "https://github.com/xaitax/SploitScan#readme"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-requests = "^2.31.0"
-jinja2 = "^3.1.2"
+requests = "^2.32.2"
+jinja2 = "^3.1.4"
+openai = "^1.30.2"
 
 [tool.setuptools.package-dir]
 sploitscan = "sploitscan"

@@ -15,6 +15,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **Patching Priority System**: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 - **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to HTML, JSON and CSV formats.
 - **Vulnerability Scanner Import**: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
+- **AI-Powered Risk Assessment**: Leverages OpenAI to provide detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries.
 - **User-Friendly Interface**: Easy to use, providing clear and concise information.
 - **Comprehensive Security Tool**: Ideal for quick security assessments and staying informed about recent vulnerabilities.
 
@@ -91,6 +92,11 @@ This system assists users in making informed decisions on which vulnerabilities 
 
 ## 📆 Changelog
 
+### [24. May 2024] - Version 0.9
+- **AI-Powered Risk Assessment**: Integrated OpenAI for detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries (needs OpenAI API key).
+- **CVE Information Retrieval**: Due to API rate limits and instabilities replaced NIST NVD with [CVE Program](https://github.com/CVEProject/cvelistV5).
+- **General Improvements**: Various bug fixes and performance improvements.
+
 ### [18. May 2024] - Version 0.8
 - **HTML Export Functionality**: Introduced the ability to export vulnerability data to HTML reports.
 - **Packet Storm Integration**: Added support for fetching exploit data from Packet Storm.
@@ -152,14 +158,16 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 **Alexander Hagenah**
 - [URL](https://primepage.de)
 - [Twitter](https://twitter.com/xaitax)
+- [LinkedIn](https://www.linkedin.com/in/alexhagenah)
 
 ## 📚 References
 
-- [NIST NVD](https://nvd.nist.gov/developers/vulnerabilities)
+- [CVE Program](https://github.com/CVEProject/cvelistV5)
 - [FIRST EPSS](https://www.first.org/epss/api)
 - [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
-- [ProjectDiscovery Nuclei](https://github.com/projectdiscovery/nuclei-templates)
 - [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
 - [VulnCheck](https://vulncheck.com/)
 - [ExploitDB](https://www.exploit-db.com/)
-
+- [ProjectDiscovery Nuclei](https://github.com/projectdiscovery/nuclei-templates)
+- [Packet Storm](https://packetstormsecurity.com/)
+- [OpenAI](https://openai.com/)

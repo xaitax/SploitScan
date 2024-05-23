@@ -21,6 +21,8 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .IP \(bu 2
 \fBVulnerability Scanner Import\fP: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
 .IP \(bu 2
+\fBAI\-Powered Risk Assessment\fP: Leverages OpenAI to provide detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries.
+.IP \(bu 2
 \fBUser\-Friendly Interface\fP: Easy to use, providing clear and concise information.
 .IP \(bu 2
 \fBComprehensive Security Tool\fP: Ideal for quick security assessments and staying informed about recent vulnerabilities.
@@ -55,10 +57,6 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .RE
 .SH 🚀 Usage
 .PP
-[image](\[la]https://github.com/xaitax/SploitScan/assets/5014849/b8701a98-dd8f-4099-bfa2-8f648bd5f4f2\[ra])
-.PP
-<hr>
-.PP
 \fBRegular\fP:
 .PP
 .RS
@@ -83,11 +81,11 @@ $ python sploitscan.py \-\-import\-file path/to/yourfile.nessus \-\-type nessus
 .fi
 .RE
 .PP
-\fBOptional: Export the results to a JSON or CSV file. Specify the format: 'json' or 'csv'.\fP
+\fBOptional: Export the results to a JSON, CSV or HTML file. Specify the format: 'json', 'csv' or 'html'.\fP
 .PP
 .RS
 .nf
-$ python sploitscan.py CVE\-YYYY\-NNNNN \-e JSON
+$ python sploitscan.py CVE\-YYYY\-NNNNN \-e HTML
 .fi
 .RE
 .PP
@@ -129,6 +127,15 @@ D: CVSS score < 6.0 and EPSS score < 0.2. Lower severity and lower probability o
 .PP
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 .SH 📆 Changelog
+.SS [24. May 2024] \- Version 0.9
+.RS
+.IP \(bu 2
+\fBAI\-Powered Risk Assessment\fP: Integrated OpenAI for detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries (needs OpenAI API key).
+.IP \(bu 2
+\fBCVE Information Retrieval\fP: Due to API rate limits and instabilities replaced NIST NVD with CVE Program \[la]https://github.com/CVEProject/cvelistV5\[ra]\&.
+.IP \(bu 2
+\fBGeneral Improvements\fP: Various bug fixes and performance improvements.
+.RE
 .SS [18. May 2024] \- Version 0.8
 .RS
 .IP \(bu 2
@@ -228,20 +235,25 @@ davidfortytwo \[la]https://github.com/davidfortytwo\[ra] for enhancements (Updat
 \fBAlexander Hagenah\fP
 \- URL \[la]https://primepage.de\[ra]
 \- Twitter \[la]https://twitter.com/xaitax\[ra]
+\- LinkedIn \[la]https://www.linkedin.com/in/alexhagenah\[ra]
 .SH 📚 References
 .RS
 .IP \(bu 2
-NIST NVD \[la]https://nvd.nist.gov/developers/vulnerabilities\[ra]
+CVE Program \[la]https://github.com/CVEProject/cvelistV5\[ra]
 .IP \(bu 2
 FIRST EPSS \[la]https://www.first.org/epss/api\[ra]
 .IP \(bu 2
 CISA Known Exploited Vulnerabilities Catalog \[la]https://www.cisa.gov/known-exploited-vulnerabilities-catalog\[ra]
-.IP \(bu 2
-ProjectDiscovery Nuclei \[la]https://github.com/projectdiscovery/nuclei-templates\[ra]
 .IP \(bu 2
 nomi\-sec PoC\-in\-GitHub API \[la]https://poc-in-github.motikan2010.net/\[ra]
 .IP \(bu 2
 VulnCheck \[la]https://vulncheck.com/\[ra]
 .IP \(bu 2
 ExploitDB \[la]https://www.exploit-db.com/\[ra]
+.IP \(bu 2
+ProjectDiscovery Nuclei \[la]https://github.com/projectdiscovery/nuclei-templates\[ra]
+.IP \(bu 2
+Packet Storm \[la]https://packetstormsecurity.com/\[ra]
+.IP \(bu 2
+OpenAI \[la]https://openai.com/\[ra]
 .RE
