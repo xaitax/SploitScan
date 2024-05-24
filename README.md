@@ -39,7 +39,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 ### Installation
 
 ```shell
-$ pip install --user  git+https://github.com/xaitax/SploitScan.git
+$ pip install --user sploitscan
 $ sploitscan
 
 ███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
