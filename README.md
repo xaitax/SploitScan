@@ -35,37 +35,12 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **[Docker](https://docs.docker.com/scout/) (.json)**:
   - ```$ docker scout cves <image> --format sarif --output image_scan.json```
 
-
 ## 🚀 Usage
 
-**Regular**:
-
-```bash
-$ python sploitscan.py CVE-YYYY-NNNNN
-```
-
-**Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces.**
-
-```bash
-$ python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
-```
-
-**Optional: Import functionality. Specify the type: 'nessus', 'nexpose', 'openvas' or 'docker' and import file.**
-
-```bash
-$ python sploitscan.py --import-file path/to/yourfile.nessus --type nessus
-```
-
-**Optional: Export the results to a JSON, CSV or HTML file. Specify the format: 'json', 'csv' or 'html'.**
-
-```bash
-$ python sploitscan.py CVE-YYYY-NNNNN -e HTML
-```
-
-**Installation**
+### Installation
 
 ```shell
-$ pip install --user  git+https://github.com/xaitax/SploitScan.git # @v0.10 to install a specific realse, branch or commit
+$ pip install --user  git+https://github.com/xaitax/SploitScan.git
 $ sploitscan
 
 ███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
@@ -79,9 +54,33 @@ v0.9 / Alexander Hagenah / @xaitax / ah@primepage.de
 ❌ No CVE IDs provided. Please provide CVE IDs or an import file and type.
 ```
 
-**Docker**
+### Regular
 
+```bash
+python sploitscan.py CVE-YYYY-NNNNN
 ```
+
+**Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces.**
+
+```bash
+python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
+```
+
+**Optional: Import functionality. Specify the type: 'nessus', 'nexpose', 'openvas' or 'docker' and import file.**
+
+```bash
+python sploitscan.py --import-file path/to/yourfile.nessus --type nessus
+```
+
+**Optional: Export the results to a JSON, CSV or HTML file. Specify the format: 'json', 'csv' or 'html'.**
+
+```bash
+python sploitscan.py CVE-YYYY-NNNNN -e HTML
+```
+
+### Docker
+
+```shell
 $ docker build -t sploitscan .
 $ docker run --rm sploitscan CVE-2024-1709
 
@@ -110,37 +109,44 @@ This system assists users in making informed decisions on which vulnerabilities 
 ## 📆 Changelog
 
 ### [24. May 2024] - Version 0.9
+
 - **AI-Powered Risk Assessment**: Integrated OpenAI for detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries (needs OpenAI API key).
 - **CVE Information Retrieval**: Due to API rate limits and instabilities replaced NIST NVD with [CVE Program](https://github.com/CVEProject/cvelistV5).
 - **General Improvements**: Various bug fixes and performance improvements.
 
 ### [18. May 2024] - Version 0.8
+
 - **HTML Export Functionality**: Introduced the ability to export vulnerability data to HTML reports.
 - **Packet Storm Integration**: Added support for fetching exploit data from Packet Storm.
 - **Enhanced Display Functions**: Added CVE_GITHUB_URL as CVE source, and functions to output the most updated CVE source.
 - **Code Refactoring**: Refactored code to improve maintainability and readability due to the growing code base.
 
 ### [11. May 2024] - Version 0.7
+
 - **Nuclei Template Integration**: Added support for discovery of Nuclei templates, enhancing vulnerability data sources.
 - **Enhanced Display Functions**: Refined visual output across all display functions for consistency and readability.
 - **General Improvements**: Various bug fixes and performance improvements such as improved error handling.
 
 ### [06. May 2024] - Version 0.6.1
+
 - **Import File Capabilities**: Added support for importing vulnerability data directly from Docker Scout scan files.
 
 ### [05. May 2024] - Version 0.6
+
 - **Import File Capabilities**: Added support for importing vulnerability data directly from Nessus, Nexpose, and OpenVAS scan files.
 - **Expanded Command-Line Options**: Introduced new command-line options to specify the import file and its type.
 - **Robust Configuration Management**: Improved error handling for missing or malformed configuration files.
 - **General Improvements**: Various bug fixes and performance improvements.
 
 ### [02. March 2024] - Version 0.5
+
 - **ExploitDB Integration**: Added support for fetching exploit data from ExploitDB.
 - **CVSS Enhancements**: Added support for CVSS 2 and CVSS 3.x
 - **Docker support**
 - **Code fixes**
 
 ### [28. February 2024] - Version 0.4
+
 - **VulnCheck Integration**: Added support for fetching exploit data from VulnCheck, enhancing the exploit information available.
 - **API Key Configuration**: Introduced the requirement for a VulnCheck API key, specified in config.json.
 - **Requirements satisfied for Debian Integration**
@@ -162,6 +168,7 @@ This system assists users in making informed decisions on which vulnerabilities 
 - Initial release of SploitScan.
 
 ## 🫱🏼‍🫲🏽 Contributing
+
 Contributions are welcome. Please feel free to fork, modify, and make pull requests or report issues.
 
 - [Nilsonfsilva](https://github.com/Nilsonfsilva) for support on Debian packaging.
@@ -172,7 +179,8 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 
 ## 📌 Author
 
-**Alexander Hagenah**
+### Alexander Hagenah
+
 - [URL](https://primepage.de)
 - [Twitter](https://twitter.com/xaitax)
 - [LinkedIn](https://www.linkedin.com/in/alexhagenah)
