@@ -886,8 +886,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
     elif export_format == "html":
         export_to_html(all_results, cve_ids)
 
-
-if __name__ == "__main__":
+def cli():
     display_banner()
     parser = argparse.ArgumentParser(
         description="SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s)."
@@ -921,3 +920,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     main(args.cve_ids, args.export, args.import_file, args.type)
+
+if __name__ == "__main__":
+    cli()
