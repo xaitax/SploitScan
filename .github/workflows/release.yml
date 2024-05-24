@@ -12,14 +12,11 @@ jobs:
     steps:
     - name: Check out the code
       uses: actions/checkout@v4
-      with:
-        node-version: '20'
 
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.8'
-        node-version: '20'
 
     - name: Install build tools
       run: |
