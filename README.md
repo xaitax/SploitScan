@@ -62,7 +62,24 @@ $ python sploitscan.py --import-file path/to/yourfile.nessus --type nessus
 $ python sploitscan.py CVE-YYYY-NNNNN -e HTML
 ```
 
-**Docker** 
+**Installation**
+
+```shell
+$ pip install --user  git+https://github.com/xaitax/SploitScan.git # @v0.10 to install a specific realse, branch or commit
+$ sploitscan
+
+███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
+██╔════╝██╔══██╗██║     ██╔═══██╗██║╚══██╔══╝██╔════╝██╔════╝██╔══██╗████╗  ██║
+███████╗██████╔╝██║     ██║   ██║██║   ██║   ███████╗██║     ███████║██╔██╗ ██║
+╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
+███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
+╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
+v0.9 / Alexander Hagenah / @xaitax / ah@primepage.de
+
+❌ No CVE IDs provided. Please provide CVE IDs or an import file and type.
+```
+
+**Docker**
 
 ```
 $ docker build -t sploitscan .
