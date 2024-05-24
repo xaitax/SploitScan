@@ -15,7 +15,9 @@ dependencies = [
     "openai~=1.30.2"
 ]
 requires-python = ">=3.8"
-scripts.sploitscan = "sploitscan.sploitscan:cli"
+
+[project.scripts]
+sploitscan = "sploitscan.sploitscan:cli"
 
 [project.urls]
 homepage = "https://github.com/xaitax/SploitScan"

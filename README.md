@@ -32,7 +32,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **[Nessus](https://www.tenable.com/products/nessus) (.nessus)**
 - **[Nexpose](https://www.rapid7.com/products/nexpose/) (.xml)**
 - **[OpenVAS](https://www.openvas.org/) (.xml)**
-- **[Docker](https://docs.docker.com/scout/) (.json)**:
+- **[Docker](https://docs.docker.com/scout/) (.json)**
 
 ## 🚀 Usage
 
@@ -175,6 +175,7 @@ Contributions are welcome. Please feel free to fork, modify, and make pull reque
 - [Javier Álvarez](https://github.com/jalvarezz13) for bugfixes.
 - [Romullo](https://github.com/Romullo) for ideas & suggestions.
 - [davidfortytwo](https://github.com/davidfortytwo) for enhancements (Updated CVE retrieval and PacketStorm addition).
+- [con-f-use](https://github.com/con-f-use) for support and fixes with setuptools/PyPi.
 
 ## 📌 Author
 
