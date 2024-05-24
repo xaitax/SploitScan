@@ -24,5 +24,5 @@ documentation = "https://github.com/xaitax/SploitScan#readme"
 changelog = "https://github.com/xaitax/SploitScan" 
 
 [tool.setuptools]
-dynamic.readme = { file = [ "README.md" ] }
+dynamic.readme = { file = [ "README.md" ], content-type = "text/markdown" }
 package-data.sploitscan = [ "templates/*.html", "config.json" ]

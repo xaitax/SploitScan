@@ -33,7 +33,6 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **[Nexpose](https://www.rapid7.com/products/nexpose/) (.xml)**
 - **[OpenVAS](https://www.openvas.org/) (.xml)**
 - **[Docker](https://docs.docker.com/scout/) (.json)**:
-  - ```$ docker scout cves <image> --format sarif --output image_scan.json```
 
 ## 🚀 Usage
 
