@@ -6,6 +6,21 @@
 
 SploitScan is a powerful and user-friendly tool designed to streamline the process of identifying exploits for known vulnerabilities and their respective exploitation probability. Empowering cybersecurity professionals with the capability to swiftly identify and apply known and test exploits. It's particularly valuable for professionals seeking to enhance their security measures or develop robust detection strategies against emerging threats.
 
+## 📖 Table of contents
+
+- 📜 [Description](#-description)
+- 🌟 [Features](#-features)
+- 💣 [Supported Exploit Databases](#-supported-exploit-databases)
+- 📁 [Supported Vulnerability Scanner Import](#-supported-vulnerability-scanner-import)
+- ⚙️ [Installation](#️-installation)
+- 🚀 [Usage](#-usage)
+- 🤖 [AI-Powered Risk Assessment](#-ai-powered-risk-assessment)
+- 🛡️ [Patching Priority System](#️-patching-priority-system)
+- 📆 [Changelog](#-changelog)
+- 🫱🏼‍🫲🏽 [Contributing](#-contributing)
+- 📌 [Author](#-author)
+- 📚 [References](#-references)
+
 ## 🌟 Features
 
 - **CVE Information Retrieval**: Fetches CVE details from the National Vulnerability Database.
@@ -34,12 +49,47 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **[OpenVAS](https://www.openvas.org/) (.xml)**
 - **[Docker](https://docs.docker.com/scout/) (.json)**
 
-## 🚀 Usage
+## ⚙️ Installation
 
-### Installation
+### GitHub
 
 ```shell
-$ pip install --user sploitscan
+git clone https://github.com/xaitax/SploitScan.git
+pip install -r requirements.txt
+cd sploitscan
+```
+
+### pip
+
+```shell
+pip install --user sploitscan
+```
+
+### Kali/Ubuntu/Debian
+
+```shell
+apt install sploitscan
+```
+
+### Configuration File
+
+Create a `config.json` file in one of the following locations with your API keys:
+
+- Current directory
+- `~/.sploitscan/`
+- `~/.config/sploitscan/`
+- `/etc/sploitscan/`
+
+```json
+{
+  "vulncheck_api_key": "your_vulncheck_api_key",
+  "openai_api_key": "your_openai_api_key"
+}
+```
+
+## 🚀 Usage
+
+```shell
 $ sploitscan
 
 ███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
@@ -53,46 +103,121 @@ v0.9 / Alexander Hagenah / @xaitax / ah@primepage.de
 ❌ No CVE IDs provided. Please provide CVE IDs or an import file and type.
 ```
 
-### Regular
+### Single CVE Query
 
 ```bash
-python sploitscan.py CVE-YYYY-NNNNN
+sploitscan CVE-2024-1709
 ```
 
-**Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces.**
+### Multiple CVE Query
 
 ```bash
-python sploitscan.py CVE-YYYY-NNNNN CVE-YYYY-NNNNN
+sploitscan CVE-2024-1709 CVE-2024-21413
 ```
 
-**Optional: Import functionality. Specify the type: 'nessus', 'nexpose', 'openvas' or 'docker' and import file.**
+### Import from Vulnerability Scanner
+
+Specify the type: 'nessus', 'nexpose', 'openvas', or 'docker' and provide the file path.
 
 ```bash
-python sploitscan.py --import-file path/to/yourfile.nessus --type nessus
+sploitscan --import-file path/to/yourfile.nessus --type nessus
 ```
 
-**Optional: Export the results to a JSON, CSV or HTML file. Specify the format: 'json', 'csv' or 'html'.**
+### Export Results
+
+Specify the export format: 'json', 'csv', or 'html'.
 
 ```bash
-python sploitscan.py CVE-YYYY-NNNNN -e HTML
+sploitscan CVE-2024-1709 -e html
 ```
 
 ### Docker
 
 ```shell
-$ docker build -t sploitscan .
-$ docker run --rm sploitscan CVE-2024-1709
+docker build -t sploitscan .
+docker run --rm sploitscan CVE-2024-1709
+```
 
 With a volume mounted from the current directory
 
-Windows (Powershell)
-$ docker run -v ${PWD}:/app --rm sploitscan CVE-2024-1709 -e JSON
+#### Windows (Powershell)
 
-Linux
-$ docker run -v $(pwd):/app --rm sploitscan CVE-2024-1709 -e JSON
+```shell
+docker run -v ${PWD}:/app --rm sploitscan CVE-2024-1709 -e JSON
 ```
 
-## 🛡️ Patching Prioritization System
+#### Linux
+
+```shell
+docker run -v $(pwd):/app --rm sploitscan CVE-2024-1709 -e JSON
+```
+
+## 🤖 AI-Powered Risk Assessment
+
+SploitScan integrates with OpenAI to provide a comprehensive AI-powered risk assessment for each CVE. This feature includes:
+
+- Detailed Risk Assessment: Understand the nature of the vulnerability and its business impact.
+- Potential Attack Scenarios: Get descriptions of potential attack scenarios leveraging the vulnerability.
+- Mitigation Recommendations: Receive specific, actionable recommendations to mitigate the risk.
+- Executive Summary: A concise summary accessible to non-technical stakeholders, highlighting the business impact and urgency.
+
+### Example output
+
+```shell
+
+$ sploitscan.py CVE-2024-21413
+
+[...]
+
+┌───[ 🤖 AI-Powered Risk Assessment ]
+|
+| 1. Risk Assessment
+| -------------------
+| The vulnerability identified by CVE-2024-21413 is a critical remote code execution flaw in
+| Microsoft Outlook with a CVSS score of 9.8. The impact on business operations can be severe due to
+| its high potential to be exploited over a network without any user interactions or elevated
+| privileges. This unvalidated input vulnerability (CWE-20) could allow an attacker to execute
+| arbitrary code on the target system, thereby compromising the confidentiality, integrity, and
+| availability of critical business data and systems. Given its critical rating and the existence of
+| multiple exploits on public repositories like GitHub, the likelihood of exploitation is very high.
+| This necessitates immediate attention from the security teams to mitigate the risks associated.
+|
+| 2. Potential Attack Scenarios
+| ------------------------------
+| An attacker could exploit this vulnerability by sending a specially crafted email to a victim
+| using Microsoft Outlook. Once the email is opened or previewed, the malicious payload would
+| execute, allowing the attacker to gain control over the victim's system. The process involves: 1.
+| Crafting a malicious email leveraging the specific flaw in email handling within Microsoft
+| Outlook. 2. Sending the email to the intended victim. 3. Upon opening or previewing the email, the
+| victim’s system executes the malicious code. The potential outcomes of this attack include theft
+| of sensitive information, installation of malware or ransomware, and compromising other systems
+| within the same network due to lateral movement capabilities.
+|
+| 3. Mitigation Recommendations
+| ------------------------------
+| Immediate mitigation recommendation includes: 1. Applying the latest security patches provided by
+| Microsoft. Reference: https://msrc.microsoft.com/update-guide/vulnerability/CVE-2024-21413 2.
+| Implementing network-level protections such as email filtering and network segmentation to limit
+| the spread of potential infections. 3. Conducting regular security awareness training for users to
+| recognize phishing and malicious emails. 4. Monitoring network and system activity for signs of
+| suspicious behavior and unauthorized execution. 5. Regularly backing up critical data and ensuring
+| the integrity of backups.
+|
+| 4. Executive Summary
+| ---------------------
+| CVE-2024-21413, a critical remote code execution vulnerability in Microsoft Outlook, poses a
+| significant risk to businesses due to its potential to be exploited without user interaction.
+| Multiple exploit proofs are publicly available, increasing the likelihood of attacks.
+| Organizations must act swiftly by applying the necessary patches from Microsoft, enhancing their
+| email security protocols, and educating their staff to identify potential phishing attempts.
+| Mitigating this vulnerability is essential to protect sensitive information, maintain business
+| integrity, and ensure system availability, thus preventing potential financial and reputational
+| damage. Immediate action is crucial to safeguard the organization against this severe threat.
+|
+└────────────────────────────────────────
+```
+
+## 🛡️ Patching Priority System
 
 The Patching Prioritization System in SploitScan provides a strategic approach to prioritizing security patches based on the severity and exploitability of vulnerabilities. It's influenced by the model from [CVE Prioritizer](https://github.com/TURROKS/CVE_Prioritizer), with enhancements for handling publicly available exploits. Here's how it works:
 
@@ -169,6 +294,8 @@ This system assists users in making informed decisions on which vulnerabilities 
 ## 🫱🏼‍🫲🏽 Contributing
 
 Contributions are welcome. Please feel free to fork, modify, and make pull requests or report issues.
+
+Special thanks to:
 
 - [Nilsonfsilva](https://github.com/Nilsonfsilva) for support on Debian packaging.
 - [bcoles](https://github.com/bcoles) for bugfixes.
