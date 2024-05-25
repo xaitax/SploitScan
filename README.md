@@ -55,8 +55,8 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 
 ```shell
 git clone https://github.com/xaitax/SploitScan.git
-pip install -r requirements.txt
 cd sploitscan
+pip install -r requirements.txt
 ```
 
 ### pip
