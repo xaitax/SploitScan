@@ -90,7 +90,7 @@ Create a `config.json` file in one of the following locations with your API keys
 ## 🚀 Usage
 
 ```shell
-$ sploitscan
+$ sploitscan.py -h
 
 ███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
 ██╔════╝██╔══██╗██║     ██╔═══██╗██║╚══██╔══╝██╔════╝██╔════╝██╔══██╗████╗  ██║
@@ -100,7 +100,22 @@ $ sploitscan
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
 v0.9 / Alexander Hagenah / @xaitax / ah@primepage.de
 
-❌ No CVE IDs provided. Please provide CVE IDs or an import file and type.
+usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-i IMPORT_FILE] [cve_ids ...]
+
+SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s).
+
+positional arguments:
+  cve_ids               Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE-YYYY-NNNNN. This argument is optional if an import file is provided
+                        using the -n option.
+
+options:
+  -h, --help            show this help message and exit
+  -e {json,JSON,csv,CSV,html,HTML}, --export {json,JSON,csv,CSV,html,HTML}
+                        Optional: Export the results to a JSON, CSV, or HTML file. Specify the format: 'json', 'csv', or 'html'.
+  -t {nessus,nexpose,openvas,docker}, --type {nessus,nexpose,openvas,docker}
+                        Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.
+  -i IMPORT_FILE, --import-file IMPORT_FILE
+                        Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.
 ```
 
 ### Single CVE Query
@@ -163,7 +178,7 @@ SploitScan integrates with OpenAI to provide a comprehensive AI-powered risk ass
 
 ### Example output
 
-```shell
+```text
 
 $ sploitscan.py CVE-2024-21413
 
