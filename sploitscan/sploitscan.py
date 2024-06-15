@@ -184,8 +184,8 @@ def display_cve_data(cve_data, error=None):
         metrics = cve_item.get("metrics", [])
         baseScore, baseSeverity, vectorString = "N/A", "N/A", "N/A"
         for metric in metrics:
-            if "cvssV3_1" in metric:
-                cvss_data = metric["cvssV3_1"]
+            cvss_data = metric.get("cvssV3_1") or metric.get("cvssV3")
+            if cvss_data:
                 baseScore = cvss_data.get("baseScore", "N/A")
                 baseSeverity = cvss_data.get("baseSeverity", "N/A")
                 vectorString = cvss_data.get("vectorString", "N/A")
@@ -505,7 +505,7 @@ def display_ai_risk_assessment(cve_details, cve_data):
                 print(wrapped_content)
             print("|")
 
-    print("└────────────────────────────────────────")
+    print("└────────────────────────────────────────\n")
 
 
 def import_vulnerability_data(file_path, file_type):
@@ -625,25 +625,33 @@ def export_to_html(all_results, cve_ids):
                 env = Environment(loader=FileSystemLoader(path))
                 break
         else:
-            print(
-                "❌ HTML template 'report_template.html' not found in any checked locations."
-            )
+            print("❌ HTML template 'report_template.html' not found in any checked locations.")
             return ["❌ Error exporting to HTML: template not found"]
 
         env.filters["datetimeformat"] = datetimeformat
         template = env.get_template("report_template.html")
         filename = generate_filename(cve_ids, "html")
-        output = template.render(cve_data=data)
+        output = template.render(cve_data=handle_cvss(data))
 
         with open(filename, "w", encoding="utf-8") as file:
             file.write(output)
 
         return [f"└ Data exported to file: {filename}"]
 
+    def handle_cvss(data):
+        for result in data:
+            metrics = result.get("CVE Data", {}).get("containers", {}).get("cna", {}).get("metrics", [])
+            for metric in metrics:
+                if "cvssV3_1" not in metric and "cvssV3" not in metric:
+                    metric["cvssV3_1"] = {"baseScore": "N/A", "baseSeverity": "N/A", "vectorString": "N/A"}
+        return data
+
     try:
         display_data("📁 HTML Export", all_results, template)
     except Exception as e:
         print(f"❌ Error exporting to HTML: {e}")
+
+
 
 
 def export_to_json(all_results, cve_ids):
