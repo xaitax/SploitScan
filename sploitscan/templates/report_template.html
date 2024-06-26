@@ -255,6 +255,25 @@
                         </table>
                     </div>
                     <div class="mb-3">
+                        <h4><span class="icon">🕵️</span> HackerOne Hacktivity</h4>
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <td>Rank</td>
+                                    <td>{{ cve['HackerOne Data']['data']['cve_entry']['rank'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td>Reports Submitted</td>
+                                    <td>{{ cve['HackerOne Data']['data']['cve_entry']['reports_submitted_count'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 'N/A' }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mb-3">
+                        <h4><span class="icon">🤖</span> AI-Powered Risk Assessment</h4>
+                        <pre style="white-space: pre-wrap;">{{ cve['Risk Assessment'] }}</pre>
+                    </div>
+                    <div class="mb-3">
                         <h4><span class="icon">⚠️</span> Patching Priority Rating</h4>
                         <table class="table table-sm">
                             <tbody>
@@ -264,12 +283,7 @@
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                    <div class="mb-3">
-                        <h4><span class="icon">🤖</span> AI-Powered Risk Assessment</h4>
-                        <pre style="white-space: pre-wrap;">{{ cve['Risk Assessment'] }}</pre>
-                    </div>
-                    
+                    </div>                    
                     <div class="mb-3">
                         <h4><span class="icon">📚</span> Further References</h4>
                         <table class="table table-sm">

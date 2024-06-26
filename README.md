@@ -27,10 +27,11 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **EPSS Integration**: Includes Exploit Prediction Scoring System (EPSS) data, offering a probability score for the likelihood of CVE exploitation, aiding in prioritization.
 - **Public Exploits Aggregation**: Gathers publicly available exploits, enhancing the understanding of vulnerabilities.
 - **CISA KEV**: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
+- **AI-Powered Risk Assessment**: Leverages OpenAI to provide detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries.
+- **HackerOne Reports**: Shows if the CVE was used within HackerOne Bug Bounty programs and their total rank overall.
 - **Patching Priority System**: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 - **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to HTML, JSON and CSV formats.
 - **Vulnerability Scanner Import**: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
-- **AI-Powered Risk Assessment**: Leverages OpenAI to provide detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries.
 - **User-Friendly Interface**: Easy to use, providing clear and concise information.
 - **Comprehensive Security Tool**: Ideal for quick security assessments and staying informed about recent vulnerabilities.
 
@@ -98,9 +99,9 @@ $ sploitscan.py -h
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.9 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.10 / Alexander Hagenah / @xaitax / ah@primepage.de
 
-usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-i IMPORT_FILE] [cve_ids ...]
+usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-i IMPORT_FILE] [-d] [cve_ids ...]
 
 SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s).
 
@@ -116,6 +117,7 @@ options:
                         Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.
   -i IMPORT_FILE, --import-file IMPORT_FILE
                         Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.
+  -d, --debug           Enable debug output.
 ```
 
 ### Single CVE Query
@@ -247,6 +249,11 @@ This system assists users in making informed decisions on which vulnerabilities 
 
 ## 📆 Changelog
 
+### [26. June 2024] - Version 0.10
+
+- **HackerOne Integration**: Added support for searching through HackerOne and displays if the CVE was used in any Bug Bounty program including its rank.
+- **General Improvements**: Various bug fixes.
+
 ### [24. May 2024] - Version 0.9
 
 - **AI-Powered Risk Assessment**: Integrated OpenAI for detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries (needs OpenAI API key).
@@ -329,12 +336,14 @@ Special thanks to:
 
 ## 📚 References
 
-- [CVE Program](https://github.com/CVEProject/cvelistV5)
-- [FIRST EPSS](https://www.first.org/epss/api)
 - [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
-- [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
-- [VulnCheck](https://vulncheck.com/)
+- [CVE Program](https://github.com/CVEProject/cvelistV5)
 - [ExploitDB](https://www.exploit-db.com/)
-- [ProjectDiscovery Nuclei](https://github.com/projectdiscovery/nuclei-templates)
-- [Packet Storm](https://packetstormsecurity.com/)
+- [FIRST EPSS](https://www.first.org/epss/api)
+- [HackerOne](https://hackerone.com/)
+- [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
 - [OpenAI](https://openai.com/)
+- [Packet Storm](https://packetstormsecurity.com/)
+- [ProjectDiscovery Nuclei](https://github.com/projectdiscovery/nuclei-templates)
+- [VulnCheck](https://vulncheck.com/)
+

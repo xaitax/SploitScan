@@ -13,7 +13,7 @@ from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 
 
-VERSION = "0.9"
+VERSION = "0.10"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -30,6 +30,7 @@ GITHUB_API_URL = "https://poc-in-github.motikan2010.net/api/v1/"
 VULNCHECK_API_URL = "https://api.vulncheck.com/v3/index/vulncheck-kev"
 EXPLOITDB_URL = "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv?ref_type=heads"
 PACKETSTORM_URL = "https://packetstormsecurity.com/search/?q={cve_id}"
+HACKERONE_URL = "https://hackerone.com/graphql"
 
 CVSS_THRESHOLD = 6.0
 EPSS_THRESHOLD = 0.2
@@ -137,6 +138,40 @@ def fetch_packetstorm_data(cve_id):
         if "No Results Found" not in response.text
         else {}
     ), None
+
+def fetch_hackerone_cve_details(cve_id):
+    headers = {
+        'content-type': 'application/json'
+    }
+    payload = {
+        "operationName": "CveDiscoveryDetailedViewCveEntry",
+        "variables": {
+            "cve_id": cve_id
+        },
+        "query": """
+        query CveDiscoveryDetailedViewCveEntry($cve_id: String!) {
+            cve_entry(cve_id: $cve_id) {
+                rank
+                reports_submitted_count
+                __typename
+            }
+        }
+        """
+    }
+
+    response = requests.post(HACKERONE_URL, headers=headers, json=payload)
+    
+    if response.status_code == 200:
+        try:
+            data = response.json()
+            if 'data' in data and 'cve_entry' in data['data']:
+                return data, None
+            else:
+                return None, "❌ No HackerOne data found for this CVE."
+        except json.JSONDecodeError as e:
+            return None, f"❌ Error parsing JSON data from HackerOne: {e}"
+    else:
+        return None, f"❌ Error fetching data from HackerOne: {response.status_code}: {response.text}"
 
 
 def display_data(title, data, template, error=None):
@@ -325,6 +360,26 @@ def display_nuclei_data(nuclei_data, error=None):
         return [f"└ URL:         {full_url}"]
 
     display_data("⚛️ Nuclei Template", nuclei_data, template, error)
+
+
+def display_hackerone_data(hackerone_data, error=None):
+    def template(data):
+        if not data or "data" not in data or "cve_entry" not in data["data"]:
+            return ["└ ❌ No data found."]
+
+        cve_entry = data["data"]["cve_entry"]
+        if not cve_entry:
+            return ["└ ❌ No data found."]
+        
+        rank = cve_entry.get("rank", "N/A")
+        reports_submitted_count = cve_entry.get("reports_submitted_count", "N/A")
+        return [
+            f"├ Rank:        {rank}",
+            f"└ Reports:     {reports_submitted_count}",
+        ]
+
+    display_data("🕵️ HackerOne Hacktivity", hackerone_data, template, error)
+
 
 
 def display_cve_references(cve_data, error=None):
@@ -731,8 +786,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         cve_id = cve_id.upper()
         if not is_valid_cve_id(cve_id):
             print(
-                f"❌ Invalid CVE ID format: {
-                    cve_id}. Please use the format CVE-YYYY-NNNNN."
+                f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN."
             )
             continue
 
@@ -741,6 +795,9 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
 
         cve_data, cve_error = fetch_github_cve_data(cve_id)
         display_cve_data(cve_data, cve_error)
+
+        if not cve_data:
+            continue
 
         epss_data, epss_error = fetch_epss_score(cve_id)
         display_epss_score(epss_data, epss_error)
@@ -774,18 +831,8 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         nuclei_data, nuclei_error = fetch_nuclei_data(cve_id)
         display_nuclei_data(nuclei_data, nuclei_error)
 
-        priority = calculate_priority(
-            cve_id,
-            cve_data,
-            epss_data,
-            github_data,
-            cisa_data,
-            vulncheck_data,
-            exploitdb_data,
-        )
-        display_priority_rating(cve_id, priority)
-
-        display_cve_references(cve_data, cve_error)
+        hackerone_data, hackerone_error = fetch_hackerone_cve_details(cve_id)
+        display_hackerone_data(hackerone_data, hackerone_error)
 
         published = cve_data["cveMetadata"].get("datePublished", "N/A")
         if published != "N/A":
@@ -840,8 +887,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         vulncheck_exploits = (
             "\n".join(
                 [
-                    f"{xdb['date_added']}: {xdb['clone_ssh_url'].replace(
-                        'git@github.com:', 'https://github.com/').replace('.git', '')}"
+                    f"{xdb['date_added']}: {xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '')}"
                     for item in vulncheck_data.get("data", [])
                     for xdb in item.get("vulncheck_xdb", [])
                 ]
@@ -853,8 +899,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         packetstorm_url = packetstorm_data.get("packetstorm_url", "N/A")
 
         nuclei_url = (
-            f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{
-                nuclei_data['file_path']}"
+            f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{nuclei_data['file_path']}"
             if nuclei_data and "file_path" in nuclei_data
             else "N/A"
         )
@@ -887,6 +932,19 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         risk_assessment = get_risk_assessment(cve_details, cve_data)
         display_ai_risk_assessment(cve_details, cve_data)
 
+        priority = calculate_priority(
+            cve_id,
+            cve_data,
+            epss_data,
+            github_data,
+            cisa_data,
+            vulncheck_data,
+            exploitdb_data,
+        )
+        display_priority_rating(cve_id, priority)
+
+        display_cve_references(cve_data, cve_error)
+
         cve_result.update(
             {
                 "CVE Data": cve_data,
@@ -897,6 +955,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
                 "VulnCheck Data": vulncheck_data,
                 "ExploitDB Data": exploitdb_data,
                 "PacketStorm Data": packetstorm_data,
+                "HackerOne Data": hackerone_data,
                 "Priority": {"Priority": priority},
                 "Risk Assessment": risk_assessment,
             }
