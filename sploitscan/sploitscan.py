@@ -100,7 +100,6 @@ def fetch_nuclei_data(cve_id):
 
 
 def fetch_vulncheck_data(cve_id):
-    config = load_config()
     vulncheck_api_key = config.get("vulncheck_api_key")
     if not vulncheck_api_key:
         return None, "API key for VulnCheck is not configured correctly."
@@ -164,7 +163,8 @@ def display_cve_data(cve_data, error=None):
         cve_item = data["containers"]["cna"]
         published = data["cveMetadata"].get("datePublished", "")
         if published:
-            published_date = datetime.datetime.fromisoformat(published.rstrip("Z"))
+            published_date = datetime.datetime.fromisoformat(
+                published.rstrip("Z"))
             published = published_date.strftime("%Y-%m-%d")
         description = (
             next(
@@ -209,13 +209,15 @@ def display_epss_score(epss_data, error=None):
         epss_score = data["data"][0].get("epss", "N/A")
         return (
             [
-                f"└ EPSS Score:  {float(epss_score) * 100:.2f}% Probability of exploitation."
+                f"└ EPSS Score:  {
+                    float(epss_score) * 100:.2f}% Probability of exploitation."
             ]
             if epss_score != "N/A"
             else []
         )
 
-    display_data("♾️ Exploit Prediction Score (EPSS)", epss_data, template, error)
+    display_data("♾️ Exploit Prediction Score (EPSS)",
+                 epss_data, template, error)
 
 
 def display_cisa_status(cve_id, cisa_data, error=None):
@@ -246,7 +248,8 @@ def display_github_data(data, error=None):
                 created_date = datetime.datetime.fromisoformat(created_at)
                 created_at = created_date.strftime("%Y-%m-%d")
             entries.append(
-                f"├ Date:        {created_at}\n└ URL:         {poc.get('html_url', 'N/A')}"
+                f"├ Date:        {created_at}\n└ URL:         {
+                    poc.get('html_url', 'N/A')}"
             )
             if index < len(data.get("pocs", [])) - 1:
                 entries.append("|")
@@ -293,7 +296,8 @@ def display_exploitdb_data(exploitdb_data, cve_id, error=None):
             sorted(data, key=lambda x: x["date"], reverse=True)
         ):
             url = f"https://www.exploit-db.com/exploits/{item['id']}"
-            entries.append(f"├ Date:        {item['date']}\n└ URL:         {url}")
+            entries.append(f"├ Date:        {
+                           item['date']}\n└ URL:         {url}")
             if index < len(data) - 1:
                 entries.append("|")
         return entries if entries else ["└ ❌ No data found."]
@@ -360,7 +364,8 @@ def calculate_priority(
     except (KeyError, IndexError, TypeError):
         pass
     in_cisa_kev = (
-        any(vuln["cveID"] == cve_id for vuln in cisa_data.get("vulnerabilities", []))
+        any(vuln["cveID"] == cve_id for vuln in cisa_data.get(
+            "vulnerabilities", []))
         if cisa_data
         else False
     )
@@ -399,10 +404,11 @@ def display_priority_rating(cve_id, priority):
     if priority is None:
         display_data("⚠️ Patching Priority Rating", None, template)
     else:
-        display_data("⚠️ Patching Priority Rating", {"priority": priority}, template)
+        display_data("⚠️ Patching Priority Rating", {
+                     "priority": priority}, template)
 
 
-def load_config():
+def load_config(debug=False):
     default_config = {"vulncheck_api_key": None, "openai_api_key": None}
     base_path = os.path.dirname(os.path.abspath(__file__))
     config_paths = [
@@ -415,23 +421,27 @@ def load_config():
     for config_path in config_paths:
         if os.path.exists(config_path):
             try:
-                with open(config_path, "r") as file:
-                    return json.load(file)
-            except json.JSONDecodeError:
-                print(
-                    f"⚠️ Error decoding JSON from the config file {config_path}, using default settings."
-                )
+                if debug:
+                    print(f"⚠️ Attempting to load config file from: {
+                          config_path}")
+                with open(config_path, "r", encoding="utf-8") as file:
+                    config = json.load(file)
+                    if debug:
+                        print(f"⚠️ Successfully loaded config file: {
+                              config_path}")
+                    return config
+            except json.JSONDecodeError as e:
+                print(f"⚠️ Error decoding JSON from the config file {
+                      config_path}: {e}")
             except Exception as e:
-                print(
-                    f"⚠️ Unexpected error reading config file {config_path}: {e}, using default settings."
-                )
+                print(f"⚠️ Unexpected error reading config file {
+                      config_path}: {e}")
 
     print("⚠️ Config file not found in any checked locations, using default settings.")
     return default_config
 
 
 def get_risk_assessment(cve_details, cve_data):
-    config = load_config()
     api_key = config.get("openai_api_key")
 
     if not api_key:
@@ -454,7 +464,7 @@ def get_risk_assessment(cve_details, cve_data):
     Provide a detailed risk assessment including the nature of the vulnerability & its business impact. Describe the likelihood and ease of exploitation, and potential impacts on confidentiality, integrity, and availability.
 
     2. Potential Attack Scenarios
-    Describe at least one potential attack scenarios that leverage this vulnerability. Each scenario should include a detailed description of the attack vector, the attack process, and the potential outcomes. 
+    Describe at least one potential attack scenarios that leverage this vulnerability. Each scenario should include a detailed description of the attack vector, the attack process, and the potential outcomes.
 
     3. Mitigation Recommendations
     Provide specific, actionable mitigation recommendations. Include immediate actions such as patching. Provide links to relevant resources where applicable.
@@ -592,7 +602,8 @@ def import_file(file_path, parse_function):
     except json.JSONDecodeError as e:
         print(f"❌ Error parsing the JSON file '{file_path}': {e}")
     except Exception as e:
-        print(f"❌ An unexpected error occurred while processing '{file_path}': {e}")
+        print(f"❌ An unexpected error occurred while processing '{
+              file_path}': {e}")
     return []
 
 
@@ -602,7 +613,8 @@ def is_valid_cve_id(cve_id):
 
 def generate_filename(cve_ids, extension):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    cve_part = "_".join(cve_ids[:3]) + ("_and_more" if len(cve_ids) > 3 else "")
+    cve_part = "_".join(cve_ids[:3]) + \
+        ("_and_more" if len(cve_ids) > 3 else "")
     return f"{timestamp}_{cve_part}_export.{extension}"
 
 
@@ -625,7 +637,8 @@ def export_to_html(all_results, cve_ids):
                 env = Environment(loader=FileSystemLoader(path))
                 break
         else:
-            print("❌ HTML template 'report_template.html' not found in any checked locations.")
+            print(
+                "❌ HTML template 'report_template.html' not found in any checked locations.")
             return ["❌ Error exporting to HTML: template not found"]
 
         env.filters["datetimeformat"] = datetimeformat
@@ -640,18 +653,18 @@ def export_to_html(all_results, cve_ids):
 
     def handle_cvss(data):
         for result in data:
-            metrics = result.get("CVE Data", {}).get("containers", {}).get("cna", {}).get("metrics", [])
+            metrics = result.get("CVE Data", {}).get(
+                "containers", {}).get("cna", {}).get("metrics", [])
             for metric in metrics:
                 if "cvssV3_1" not in metric and "cvssV3" not in metric:
-                    metric["cvssV3_1"] = {"baseScore": "N/A", "baseSeverity": "N/A", "vectorString": "N/A"}
+                    metric["cvssV3_1"] = {
+                        "baseScore": "N/A", "baseSeverity": "N/A", "vectorString": "N/A"}
         return data
 
     try:
         display_data("📁 HTML Export", all_results, template)
     except Exception as e:
         print(f"❌ Error exporting to HTML: {e}")
-
-
 
 
 def export_to_json(all_results, cve_ids):
@@ -718,7 +731,8 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         cve_id = cve_id.upper()
         if not is_valid_cve_id(cve_id):
             print(
-                f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN."
+                f"❌ Invalid CVE ID format: {
+                    cve_id}. Please use the format CVE-YYYY-NNNNN."
             )
             continue
 
@@ -826,7 +840,8 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         vulncheck_exploits = (
             "\n".join(
                 [
-                    f"{xdb['date_added']}: {xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '')}"
+                    f"{xdb['date_added']}: {xdb['clone_ssh_url'].replace(
+                        'git@github.com:', 'https://github.com/').replace('.git', '')}"
                     for item in vulncheck_data.get("data", [])
                     for xdb in item.get("vulncheck_xdb", [])
                 ]
@@ -838,7 +853,8 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
         packetstorm_url = packetstorm_data.get("packetstorm_url", "N/A")
 
         nuclei_url = (
-            f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{nuclei_data['file_path']}"
+            f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{
+                nuclei_data['file_path']}"
             if nuclei_data and "file_path" in nuclei_data
             else "N/A"
         )
@@ -894,6 +910,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
     elif export_format == "html":
         export_to_html(all_results, cve_ids)
 
+
 def cli():
     display_banner()
     parser = argparse.ArgumentParser(
@@ -924,10 +941,20 @@ def cli():
         type=str,
         help="Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.",
     )
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        help="Enable debug output."
+    )
 
     args = parser.parse_args()
 
+    global config
+    config = load_config(args.debug)
+
     main(args.cve_ids, args.export, args.import_file, args.type)
+
 
 if __name__ == "__main__":
     cli()
