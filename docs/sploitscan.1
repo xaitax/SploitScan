@@ -1,9 +1,37 @@
-.TH SploitScan 1 "Version 0.9" "SploitScan user manual"
+.TH SploitScan 1 "Version 0.10.1" "SploitScan user manual"
 .SH NAME
 \fBSploitScan\fP - A tool to fetch and display vulnerability information and public exploits for given CVE IDs.
+.PP
 .SH 📜 Description
 .PP
 SploitScan is a powerful and user\-friendly tool designed to streamline the process of identifying exploits for known vulnerabilities and their respective exploitation probability. Empowering cybersecurity professionals with the capability to swiftly identify and apply known and test exploits. It's particularly valuable for professionals seeking to enhance their security measures or develop robust detection strategies against emerging threats.
+.SH 📖 Table of contents
+.RS
+.IP \(bu 2
+📜 Description \[la]#-description\[ra]
+.IP \(bu 2
+🌟 Features \[la]#-features\[ra]
+.IP \(bu 2
+💣 Supported Exploit Databases \[la]#-supported-exploit-databases\[ra]
+.IP \(bu 2
+📁 Supported Vulnerability Scanner Import \[la]#-supported-vulnerability-scanner-import\[ra]
+.IP \(bu 2
+⚙️ Installation \[la]#️-installation\[ra]
+.IP \(bu 2
+🚀 Usage \[la]#-usage\[ra]
+.IP \(bu 2
+🤖 AI\-Powered Risk Assessment \[la]#-ai-powered-risk-assessment\[ra]
+.IP \(bu 2
+🛡️ Patching Priority System \[la]#️-patching-priority-system\[ra]
+.IP \(bu 2
+📆 Changelog \[la]#-changelog\[ra]
+.IP \(bu 2
+🫱🏼‍🫲🏽 Contributing \[la]#-contributing\[ra]
+.IP \(bu 2
+📌 Author \[la]#-author\[ra]
+.IP \(bu 2
+📚 References \[la]#-references\[ra]
+.RE
 .SH 🌟 Features
 .RS
 .IP \(bu 2
@@ -15,13 +43,15 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .IP \(bu 2
 \fBCISA KEV\fP: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
 .IP \(bu 2
+\fBAI\-Powered Risk Assessment\fP: Leverages OpenAI to provide detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries.
+.IP \(bu 2
+\fBHackerOne Reports\fP: Shows if the CVE was used within HackerOne Bug Bounty programs including their total rank overall and severity distribution.
+.IP \(bu 2
 \fBPatching Priority System\fP: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 .IP \(bu 2
 \fBMulti\-CVE Support and Export Options\fP: Supports multiple CVEs in a single run and allows exporting the results to HTML, JSON and CSV formats.
 .IP \(bu 2
 \fBVulnerability Scanner Import\fP: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
-.IP \(bu 2
-\fBAI\-Powered Risk Assessment\fP: Leverages OpenAI to provide detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries.
 .IP \(bu 2
 \fBUser\-Friendly Interface\fP: Easy to use, providing clear and concise information.
 .IP \(bu 2
@@ -49,63 +79,214 @@ SploitScan is a powerful and user\-friendly tool designed to streamline the proc
 .IP \(bu 2
 \fBOpenVAS \[la]https://www.openvas.org/\[ra] (.xml)\fP
 .IP \(bu 2
-\fBDocker \[la]https://docs.docker.com/scout/\[ra] (.json)\fP:
+\fBDocker \[la]https://docs.docker.com/scout/\[ra] (.json)\fP
+.RE
+.SH ⚙️ Installation
+.SS GitHub
+.PP
+.RS
+.nf
+git clone https://github.com/xaitax/SploitScan.git
+cd sploitscan
+pip install \-r requirements.txt
+.fi
+.RE
+.SS pip
+.PP
+.RS
+.nf
+pip install \-\-user sploitscan
+.fi
+.RE
+.SS Kali/Ubuntu/Debian
+.PP
+.RS
+.nf
+apt install sploitscan
+.fi
+.RE
+.SS Configuration File
+.PP
+Create a \fB\fCconfig.json\fR file in one of the following locations with your API keys:
 .RS
 .IP \(bu 2
-\fB\fC$ docker scout cves <image> \-\-format sarif \-\-output image_scan.json\fR
+Current directory
+.IP \(bu 2
+\fB\fC~/.sploitscan/\fR
+.IP \(bu 2
+\fB\fC~/.config/sploitscan/\fR
+.IP \(bu 2
+\fB\fC/etc/sploitscan/\fR
 .RE
+.PP
+.RS
+.nf
+{
+  "vulncheck_api_key": "your_vulncheck_api_key",
+  "openai_api_key": "your_openai_api_key"
+}
+.fi
 .RE
 .SH 🚀 Usage
 .PP
-\fBRegular\fP:
-.PP
 .RS
 .nf
-$ python sploitscan.py CVE\-YYYY\-NNNNN
-.fi
-.RE
-.PP
-\fBEnter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces.\fP
-.PP
-.RS
-.nf
-$ python sploitscan.py CVE\-YYYY\-NNNNN CVE\-YYYY\-NNNNN
-.fi
-.RE
-.PP
-\fBOptional: Import functionality. Specify the type: 'nessus', 'nexpose', 'openvas' or 'docker' and import file.\fP
-.PP
-.RS
-.nf
-$ python sploitscan.py \-\-import\-file path/to/yourfile.nessus \-\-type nessus
-.fi
-.RE
-.PP
-\fBOptional: Export the results to a JSON, CSV or HTML file. Specify the format: 'json', 'csv' or 'html'.\fP
-.PP
-.RS
-.nf
-$ python sploitscan.py CVE\-YYYY\-NNNNN \-e HTML
-.fi
-.RE
-.PP
-\fBDocker\fP 
-.PP
-.RS
-.nf
-$ docker build \-t sploitscan .
-$ docker run \-\-rm sploitscan CVE\-2024\-1709
+$ sploitscan.py \-h
 
+███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
+██╔════╝██╔══██╗██║     ██╔═══██╗██║╚══██╔══╝██╔════╝██╔════╝██╔══██╗████╗  ██║
+███████╗██████╔╝██║     ██║   ██║██║   ██║   ███████╗██║     ███████║██╔██╗ ██║
+╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
+███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
+╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
+v0.10.1 / Alexander Hagenah / @xaitax / ah@primepage.de
+
+usage: sploitscan.py [\-h] [\-e {json,JSON,csv,CSV,html,HTML}] [\-t {nessus,nexpose,openvas,docker}] [\-i IMPORT_FILE] [\-d] [cve_ids ...]
+
+SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s).
+
+positional arguments:
+  cve_ids               Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE\-YYYY\-NNNNN. This argument is optional if an import file is provided
+                        using the \-n option.
+
+options:
+  \-h, \-\-help            show this help message and exit
+  \-e {json,JSON,csv,CSV,html,HTML}, \-\-export {json,JSON,csv,CSV,html,HTML}
+                        Optional: Export the results to a JSON, CSV, or HTML file. Specify the format: 'json', 'csv', or 'html'.
+  \-t {nessus,nexpose,openvas,docker}, \-\-type {nessus,nexpose,openvas,docker}
+                        Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.
+  \-i IMPORT_FILE, \-\-import\-file IMPORT_FILE
+                        Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.
+  \-d, \-\-debug           Enable debug output.
+.fi
+.RE
+.SS Single CVE Query
+.PP
+.RS
+.nf
+sploitscan CVE\-2024\-1709
+.fi
+.RE
+.SS Multiple CVE Query
+.PP
+.RS
+.nf
+sploitscan CVE\-2024\-1709 CVE\-2024\-21413
+.fi
+.RE
+.SS Import from Vulnerability Scanner
+.PP
+Specify the type: 'nessus', 'nexpose', 'openvas', or 'docker' and provide the file path.
+.PP
+.RS
+.nf
+sploitscan \-\-import\-file path/to/yourfile.nessus \-\-type nessus
+.fi
+.RE
+.SS Export Results
+.PP
+Specify the export format: 'json', 'csv', or 'html'.
+.PP
+.RS
+.nf
+sploitscan CVE\-2024\-1709 \-e html
+.fi
+.RE
+.SS Docker
+.PP
+.RS
+.nf
+docker build \-t sploitscan .
+docker run \-\-rm sploitscan CVE\-2024\-1709
+.fi
+.RE
+.PP
 With a volume mounted from the current directory
-
-Windows (Powershell)
-$ docker run \-v ${PWD}:/app \-\-rm sploitscan CVE\-2024\-1709 \-e JSON
-
-Linux
-$ docker run \-v $(pwd):/app \-\-rm sploitscan CVE\-2024\-1709 \-e JSON
+.SS Windows (Powershell)
+.PP
+.RS
+.nf
+docker run \-v ${PWD}:/app \-\-rm sploitscan CVE\-2024\-1709 \-e JSON
 .fi
 .RE
-.SH 🛡️ Patching Prioritization System
+.SS Linux
+.PP
+.RS
+.nf
+docker run \-v $(pwd):/app \-\-rm sploitscan CVE\-2024\-1709 \-e JSON
+.fi
+.RE
+.SH 🤖 AI\-Powered Risk Assessment
+.PP
+SploitScan integrates with OpenAI to provide a comprehensive AI\-powered risk assessment for each CVE. This feature includes:
+.RS
+.IP \(bu 2
+Detailed Risk Assessment: Understand the nature of the vulnerability and its business impact.
+.IP \(bu 2
+Potential Attack Scenarios: Get descriptions of potential attack scenarios leveraging the vulnerability.
+.IP \(bu 2
+Mitigation Recommendations: Receive specific, actionable recommendations to mitigate the risk.
+.IP \(bu 2
+Executive Summary: A concise summary accessible to non\-technical stakeholders, highlighting the business impact and urgency.
+.RE
+.SS Example output
+.PP
+.RS
+.nf
+
+$ sploitscan.py CVE\-2024\-21413
+
+[...]
+
+┌───[ 🤖 AI\-Powered Risk Assessment ]
+|
+| 1. Risk Assessment
+| \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+| The vulnerability identified by CVE\-2024\-21413 is a critical remote code execution flaw in
+| Microsoft Outlook with a CVSS score of 9.8. The impact on business operations can be severe due to
+| its high potential to be exploited over a network without any user interactions or elevated
+| privileges. This unvalidated input vulnerability (CWE\-20) could allow an attacker to execute
+| arbitrary code on the target system, thereby compromising the confidentiality, integrity, and
+| availability of critical business data and systems. Given its critical rating and the existence of
+| multiple exploits on public repositories like GitHub, the likelihood of exploitation is very high.
+| This necessitates immediate attention from the security teams to mitigate the risks associated.
+|
+| 2. Potential Attack Scenarios
+| \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+| An attacker could exploit this vulnerability by sending a specially crafted email to a victim
+| using Microsoft Outlook. Once the email is opened or previewed, the malicious payload would
+| execute, allowing the attacker to gain control over the victim's system. The process involves: 1.
+| Crafting a malicious email leveraging the specific flaw in email handling within Microsoft
+| Outlook. 2. Sending the email to the intended victim. 3. Upon opening or previewing the email, the
+| victim’s system executes the malicious code. The potential outcomes of this attack include theft
+| of sensitive information, installation of malware or ransomware, and compromising other systems
+| within the same network due to lateral movement capabilities.
+|
+| 3. Mitigation Recommendations
+| \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+| Immediate mitigation recommendation includes: 1. Applying the latest security patches provided by
+| Microsoft. Reference: https://msrc.microsoft.com/update\-guide/vulnerability/CVE\-2024\-21413 2.
+| Implementing network\-level protections such as email filtering and network segmentation to limit
+| the spread of potential infections. 3. Conducting regular security awareness training for users to
+| recognize phishing and malicious emails. 4. Monitoring network and system activity for signs of
+| suspicious behavior and unauthorized execution. 5. Regularly backing up critical data and ensuring
+| the integrity of backups.
+|
+| 4. Executive Summary
+| \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-
+| CVE\-2024\-21413, a critical remote code execution vulnerability in Microsoft Outlook, poses a
+| significant risk to businesses due to its potential to be exploited without user interaction.
+| Multiple exploit proofs are publicly available, increasing the likelihood of attacks.
+| Organizations must act swiftly by applying the necessary patches from Microsoft, enhancing their
+| email security protocols, and educating their staff to identify potential phishing attempts.
+| Mitigating this vulnerability is essential to protect sensitive information, maintain business
+| integrity, and ensure system availability, thus preventing potential financial and reputational
+| damage. Immediate action is crucial to safeguard the organization against this severe threat.
+|
+└────────────────────────────────────────
+.fi
+.RE
+.SH 🛡️ Patching Priority System
 .PP
 The Patching Prioritization System in SploitScan provides a strategic approach to prioritizing security patches based on the severity and exploitability of vulnerabilities. It's influenced by the model from CVE Prioritizer \[la]https://github.com/TURROKS/CVE_Prioritizer\[ra], with enhancements for handling publicly available exploits. Here's how it works:
 .RS
@@ -127,6 +308,13 @@ D: CVSS score < 6.0 and EPSS score < 0.2. Lower severity and lower probability o
 .PP
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 .SH 📆 Changelog
+.SS [26. June 2024] \- Version 0.10
+.RS
+.IP \(bu 2
+\fBHackerOne Integration\fP: Added support for searching through HackerOne and displays if the CVE was used in any Bug Bounty program including its rank and severity distribution.
+.IP \(bu 2
+\fBGeneral Improvements\fP: Various bug fixes.
+.RE
 .SS [24. May 2024] \- Version 0.9
 .RS
 .IP \(bu 2
@@ -218,6 +406,8 @@ Initial release of SploitScan.
 .SH 🫱🏼‍🫲🏽 Contributing
 .PP
 Contributions are welcome. Please feel free to fork, modify, and make pull requests or report issues.
+.PP
+Special thanks to:
 .RS
 .IP \(bu 2
 Nilsonfsilva \[la]https://github.com/Nilsonfsilva\[ra] for support on Debian packaging.
@@ -229,31 +419,41 @@ Javier Álvarez \[la]https://github.com/jalvarezz13\[ra] for bugfixes.
 Romullo \[la]https://github.com/Romullo\[ra] for ideas & suggestions.
 .IP \(bu 2
 davidfortytwo \[la]https://github.com/davidfortytwo\[ra] for enhancements (Updated CVE retrieval and PacketStorm addition).
+.IP \(bu 2
+con\-f\-use \[la]https://github.com/con-f-use\[ra] for support and fixes with setuptools/PyPi.
+.IP \(bu 2
+Martijn Russchen \[la]https://github.com/martijnrusschen\[ra] for his feedback and idea on HackerOne GraphQL.
 .RE
 .SH 📌 Author
-.PP
-\fBAlexander Hagenah\fP
-\- URL \[la]https://primepage.de\[ra]
-\- Twitter \[la]https://twitter.com/xaitax\[ra]
-\- LinkedIn \[la]https://www.linkedin.com/in/alexhagenah\[ra]
+.SS Alexander Hagenah
+.RS
+.IP \(bu 2
+URL \[la]https://primepage.de\[ra]
+.IP \(bu 2
+Twitter \[la]https://twitter.com/xaitax\[ra]
+.IP \(bu 2
+LinkedIn \[la]https://www.linkedin.com/in/alexhagenah\[ra]
+.RE
 .SH 📚 References
 .RS
 .IP \(bu 2
-CVE Program \[la]https://github.com/CVEProject/cvelistV5\[ra]
-.IP \(bu 2
-FIRST EPSS \[la]https://www.first.org/epss/api\[ra]
-.IP \(bu 2
 CISA Known Exploited Vulnerabilities Catalog \[la]https://www.cisa.gov/known-exploited-vulnerabilities-catalog\[ra]
 .IP \(bu 2
-nomi\-sec PoC\-in\-GitHub API \[la]https://poc-in-github.motikan2010.net/\[ra]
-.IP \(bu 2
-VulnCheck \[la]https://vulncheck.com/\[ra]
+CVE Program \[la]https://github.com/CVEProject/cvelistV5\[ra]
 .IP \(bu 2
 ExploitDB \[la]https://www.exploit-db.com/\[ra]
 .IP \(bu 2
-ProjectDiscovery Nuclei \[la]https://github.com/projectdiscovery/nuclei-templates\[ra]
+FIRST EPSS \[la]https://www.first.org/epss/api\[ra]
+.IP \(bu 2
+HackerOne \[la]https://hackerone.com/\[ra]
+.IP \(bu 2
+nomi\-sec PoC\-in\-GitHub API \[la]https://poc-in-github.motikan2010.net/\[ra]
+.IP \(bu 2
+OpenAI \[la]https://openai.com/\[ra]
 .IP \(bu 2
 Packet Storm \[la]https://packetstormsecurity.com/\[ra]
 .IP \(bu 2
-OpenAI \[la]https://openai.com/\[ra]
+ProjectDiscovery Nuclei \[la]https://github.com/projectdiscovery/nuclei-templates\[ra]
+.IP \(bu 2
+VulnCheck \[la]https://vulncheck.com/\[ra]
 .RE

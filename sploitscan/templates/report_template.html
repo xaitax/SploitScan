@@ -266,9 +266,20 @@
                                     <td>Reports Submitted</td>
                                     <td>{{ cve['HackerOne Data']['data']['cve_entry']['reports_submitted_count'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 'N/A' }}</td>
                                 </tr>
+                                <tr>
+                                    <td>Severity</td>
+                                    <td>
+                                        🔍 Unknown: {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_unknown'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 0 }},
+                                        🚫 None: {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_none'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 0 }},
+                                        ⚠️ Low: {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_low'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 0 }},
+                                        🔧 Medium: {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_medium'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 0 }},
+                                        🔥 High: {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_high'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 0 }},
+                                        💀 Critical: {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_critical'] if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') else 0 }}
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
-                    </div>
+                    </div>                    
                     <div class="mb-3">
                         <h4><span class="icon">🤖</span> AI-Powered Risk Assessment</h4>
                         <pre style="white-space: pre-wrap;">{{ cve['Risk Assessment'] }}</pre>

@@ -4,7 +4,11 @@ import requests
 import argparse
 import datetime
 import textwrap
+import threading
+import itertools
+import time
 import json
+import sys
 import os
 import csv
 import re
@@ -13,7 +17,7 @@ from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 
 
-VERSION = "0.10"
+VERSION = "0.10.1"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -153,6 +157,12 @@ def fetch_hackerone_cve_details(cve_id):
             cve_entry(cve_id: $cve_id) {
                 rank
                 reports_submitted_count
+                severity_count_unknown
+                severity_count_none
+                severity_count_low
+                severity_count_medium
+                severity_count_high
+                severity_count_critical
                 __typename
             }
         }
@@ -244,8 +254,7 @@ def display_epss_score(epss_data, error=None):
         epss_score = data["data"][0].get("epss", "N/A")
         return (
             [
-                f"└ EPSS Score:  {
-                    float(epss_score) * 100:.2f}% Probability of exploitation."
+                f"└ EPSS Score:  {float(epss_score) * 100:.2f}% Probability of exploitation."
             ]
             if epss_score != "N/A"
             else []
@@ -282,10 +291,9 @@ def display_github_data(data, error=None):
             if created_at != "N/A":
                 created_date = datetime.datetime.fromisoformat(created_at)
                 created_at = created_date.strftime("%Y-%m-%d")
-            entries.append(
-                f"├ Date:        {created_at}\n└ URL:         {
-                    poc.get('html_url', 'N/A')}"
-            )
+                entries.append(
+                    f"├ Date:        {created_at}\n└ URL:         {poc.get('html_url', 'N/A')}"
+                )
             if index < len(data.get("pocs", [])) - 1:
                 entries.append("|")
         return entries if entries else ["└ ❌ No data found."]
@@ -331,8 +339,9 @@ def display_exploitdb_data(exploitdb_data, cve_id, error=None):
             sorted(data, key=lambda x: x["date"], reverse=True)
         ):
             url = f"https://www.exploit-db.com/exploits/{item['id']}"
-            entries.append(f"├ Date:        {
-                           item['date']}\n└ URL:         {url}")
+            entries.append(
+                f"├ Date:        {item['date']}\n└ URL:         {url}"
+            )
             if index < len(data) - 1:
                 entries.append("|")
         return entries if entries else ["└ ❌ No data found."]
@@ -373,13 +382,23 @@ def display_hackerone_data(hackerone_data, error=None):
         
         rank = cve_entry.get("rank", "N/A")
         reports_submitted_count = cve_entry.get("reports_submitted_count", "N/A")
+        
+        severity_unknown = cve_entry.get("severity_count_unknown", 0)
+        severity_none = cve_entry.get("severity_count_none", 0)
+        severity_low = cve_entry.get("severity_count_low", 0)
+        severity_medium = cve_entry.get("severity_count_medium", 0)
+        severity_high = cve_entry.get("severity_count_high", 0)
+        severity_critical = cve_entry.get("severity_count_critical", 0)
+        
+        severity_display = f"Unknown: {severity_unknown} / None: {severity_none} / Low: {severity_low} / Medium: {severity_medium} / High: {severity_high} / Critical: {severity_critical}"
+        
         return [
             f"├ Rank:        {rank}",
-            f"└ Reports:     {reports_submitted_count}",
+            f"├ Reports:     {reports_submitted_count}",
+            f"└ Severity:    {severity_display}",
         ]
 
     display_data("🕵️ HackerOne Hacktivity", hackerone_data, template, error)
-
 
 
 def display_cve_references(cve_data, error=None):
@@ -477,20 +496,16 @@ def load_config(debug=False):
         if os.path.exists(config_path):
             try:
                 if debug:
-                    print(f"⚠️ Attempting to load config file from: {
-                          config_path}")
+                    print(f"⚠️ Attempting to load config file from: {config_path}")
                 with open(config_path, "r", encoding="utf-8") as file:
                     config = json.load(file)
                     if debug:
-                        print(f"⚠️ Successfully loaded config file: {
-                              config_path}")
+                        print(f"⚠️ Successfully loaded config file: {config_path}")
                     return config
             except json.JSONDecodeError as e:
-                print(f"⚠️ Error decoding JSON from the config file {
-                      config_path}: {e}")
+                print(f"⚠️ Error decoding JSON from the config file {config_path}: {e}")
             except Exception as e:
-                print(f"⚠️ Unexpected error reading config file {
-                      config_path}: {e}")
+                print(f"⚠️ Unexpected error reading config file {config_path}: {e}")
 
     print("⚠️ Config file not found in any checked locations, using default settings.")
     return default_config
@@ -543,34 +558,65 @@ def get_risk_assessment(cve_details, cve_data):
 
 
 def display_ai_risk_assessment(cve_details, cve_data):
-    assessment = get_risk_assessment(cve_details, cve_data)
+    def spinner_animation(message):
+        spinner = itertools.cycle(['|', '/', '-', '\\'])
+        while not stop_spinner:
+            sys.stdout.write(f'\r{message} {next(spinner)}')
+            sys.stdout.flush()
+            time.sleep(0.1)
+        sys.stdout.write('\r' + ' ' * (len(message) + 2) + '\r')
+        sys.stdout.flush()
+
+    def get_risk_assessment_thread():
+        nonlocal assessment
+        assessment = get_risk_assessment(cve_details, cve_data)
+        global stop_spinner
+        stop_spinner = True
+
+    global stop_spinner
+    stop_spinner = False
+    assessment = None
 
     print("┌───[ 🤖 AI-Powered Risk Assessment ]")
     print("|")
 
-    sections = assessment.split("\n\n")
+    spinner_thread = threading.Thread(target=spinner_animation, args=("| Loading OpenAI risk assessment... ",))
+    spinner_thread.start()
 
-    for section in sections:
-        section = section.strip()
-        if section:
-            if section.startswith(("1. ", "2. ", "3. ", "4. ")):
-                header = section.split("\n")[0].strip()
-                print(f"| {header}")
-                print("| " + "-" * (len(header) + 1))
+    assessment_thread = threading.Thread(target=get_risk_assessment_thread)
+    assessment_thread.start()
 
-                content = "\n".join(section.split("\n")[1:]).strip()
-                wrapped_content = textwrap.fill(
-                    content, width=100, initial_indent="| ", subsequent_indent="| "
-                )
-                print(wrapped_content)
-            else:
-                wrapped_content = textwrap.fill(
-                    section, width=100, initial_indent="| ", subsequent_indent="| "
-                )
-                print(wrapped_content)
-            print("|")
+    assessment_thread.join()
+
+    spinner_thread.join()
+
+    print("|")
+
+    if assessment:
+        sections = assessment.split("\n\n")
+
+        for section in sections:
+            section = section.strip()
+            if section:
+                if section.startswith(("1. ", "2. ", "3. ", "4. ")):
+                    header = section.split("\n")[0].strip()
+                    print(f"| {header}")
+                    print("| " + "-" * (len(header) + 1))
+
+                    content = "\n".join(section.split("\n")[1:]).strip()
+                    wrapped_content = textwrap.fill(
+                        content, width=100, initial_indent="| ", subsequent_indent="| "
+                    )
+                    print(wrapped_content)
+                else:
+                    wrapped_content = textwrap.fill(
+                        section, width=100, initial_indent="| ", subsequent_indent="| "
+                    )
+                    print(wrapped_content)
+                print("|")
 
     print("└────────────────────────────────────────\n")
+
 
 
 def import_vulnerability_data(file_path, file_type):
@@ -657,8 +703,7 @@ def import_file(file_path, parse_function):
     except json.JSONDecodeError as e:
         print(f"❌ Error parsing the JSON file '{file_path}': {e}")
     except Exception as e:
-        print(f"❌ An unexpected error occurred while processing '{
-              file_path}': {e}")
+        print(f"❌ An unexpected error occurred while processing '{file_path}': {e}")
     return []
 
 

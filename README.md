@@ -28,7 +28,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **Public Exploits Aggregation**: Gathers publicly available exploits, enhancing the understanding of vulnerabilities.
 - **CISA KEV**: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
 - **AI-Powered Risk Assessment**: Leverages OpenAI to provide detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries.
-- **HackerOne Reports**: Shows if the CVE was used within HackerOne Bug Bounty programs and their total rank overall.
+- **HackerOne Reports**: Shows if the CVE was used within HackerOne Bug Bounty programs including their total rank overall and severity distribution.
 - **Patching Priority System**: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 - **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to HTML, JSON and CSV formats.
 - **Vulnerability Scanner Import**: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
@@ -99,7 +99,7 @@ $ sploitscan.py -h
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.10 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.10.1 / Alexander Hagenah / @xaitax / ah@primepage.de
 
 usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-i IMPORT_FILE] [-d] [cve_ids ...]
 
@@ -251,7 +251,7 @@ This system assists users in making informed decisions on which vulnerabilities 
 
 ### [26. June 2024] - Version 0.10
 
-- **HackerOne Integration**: Added support for searching through HackerOne and displays if the CVE was used in any Bug Bounty program including its rank.
+- **HackerOne Integration**: Added support for searching through HackerOne and displays if the CVE was used in any Bug Bounty program including its rank and severity distribution.
 - **General Improvements**: Various bug fixes.
 
 ### [24. May 2024] - Version 0.9
@@ -325,6 +325,7 @@ Special thanks to:
 - [Romullo](https://github.com/Romullo) for ideas & suggestions.
 - [davidfortytwo](https://github.com/davidfortytwo) for enhancements (Updated CVE retrieval and PacketStorm addition).
 - [con-f-use](https://github.com/con-f-use) for support and fixes with setuptools/PyPi.
+- [Martijn Russchen](https://github.com/martijnrusschen) for his feedback and idea on HackerOne GraphQL.
 
 ## 📌 Author
 
