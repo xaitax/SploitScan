@@ -1,6 +1,6 @@
 # SploitScan
 
-![sploitscan_v0 8](https://github.com/xaitax/SploitScan/assets/5014849/ec5c1a79-cee8-4b06-9ea5-fd063651c8fc)
+![sploitscan_v0 10 1](https://github.com/xaitax/SploitScan/assets/5014849/440c68dc-bd05-4770-9cd9-83b26ab9e6f1)
 
 ## 📜 Description
 
