@@ -1,6 +1,7 @@
 # SploitScan
 
-![sploitscan_v0 10 1](https://github.com/xaitax/SploitScan/assets/5014849/440c68dc-bd05-4770-9cd9-83b26ab9e6f1)
+
+![SPLOITSCAN-LOGO](https://github.com/xaitax/SploitScan/assets/5014849/05f6641c-2279-456f-9e5a-329926529169)
 
 ## 📜 Description
 
@@ -20,6 +21,10 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - 🫱🏼‍🫲🏽 [Contributing](#-contributing)
 - 📌 [Author](#-author)
 - 📚 [References](#-references)
+
+
+![sploitscan_v0 10 1](https://github.com/xaitax/SploitScan/assets/5014849/440c68dc-bd05-4770-9cd9-83b26ab9e6f1)
+
 
 ## 🌟 Features
 
