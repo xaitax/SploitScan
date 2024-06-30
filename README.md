@@ -83,6 +83,10 @@ Create a `config.json` file in one of the following locations with your API keys
 - `~/.sploitscan/`
 - `~/.config/sploitscan/`
 - `/etc/sploitscan/`
+- `~/Library/Application Support/sploitscan/` (macOS)
+- `%APPDATA%/sploitscan/` (Windows)
+
+You can also specify a custom configuration file path using the `--config` or `-c` command-line argument.
 
 ```json
 {
@@ -102,15 +106,15 @@ $ sploitscan.py -h
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.10.1 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.10.2 / Alexander Hagenah / @xaitax / ah@primepage.de
 
-usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-i IMPORT_FILE] [-d] [cve_ids ...]
+usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-i IMPORT_FILE] [-c CONFIG] [-d] [cve_ids ...]
 
 SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s).
 
 positional arguments:
   cve_ids               Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE-YYYY-NNNNN. This argument is optional if an import file is provided
-                        using the -n option.
+                        using the -i option.
 
 options:
   -h, --help            show this help message and exit
@@ -120,6 +124,8 @@ options:
                         Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.
   -i IMPORT_FILE, --import-file IMPORT_FILE
                         Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.
+  -c CONFIG, --config CONFIG
+                        Path to a custom config file.
   -d, --debug           Enable debug output.
 ```
 
@@ -251,6 +257,12 @@ The Patching Prioritization System in SploitScan provides a strategic approach t
 This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
 
 ## 📆 Changelog
+
+### [30. June 2024] - Version 0.10.2
+
+- **Custom Configuration Path**: Added support for specifying a custom configuration file path using the `--config` or `-c` command-line argument.
+- **Platform-Specific Directories**: Added support for platform-specific (*nix, macOS, Windows) configuration directories.
+- **Debug Mode**: Improved debug output for configuration file loading.
 
 ### [26. June 2024] - Version 0.10
 

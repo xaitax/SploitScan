@@ -17,7 +17,7 @@ from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 
 
-VERSION = "0.10.1"
+VERSION = "0.10.2"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -482,30 +482,37 @@ def display_priority_rating(cve_id, priority):
                      "priority": priority}, template)
 
 
-def load_config(debug=False):
+def load_config(config_path=None, debug=False):
     default_config = {"vulncheck_api_key": None, "openai_api_key": None}
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    config_paths = [
-        os.path.join(base_path, "config.json"),
+    config_env_var = "SPLOITSCAN_CONFIG_PATH"
+    
+    config_paths = [config_path] if config_path else []
+    config_paths += [
+        os.getenv(config_env_var),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json"),
         os.path.expanduser("~/.sploitscan/config.json"),
         os.path.expanduser("~/.config/sploitscan/config.json"),
+        os.path.expanduser("~/Library/Application Support/sploitscan/config.json"),
+        os.path.join(os.getenv("APPDATA", ""), "sploitscan", "config.json"),
         "/etc/sploitscan/config.json",
     ]
 
-    for config_path in config_paths:
-        if os.path.exists(config_path):
+    config_paths = [path for path in config_paths if path]
+
+    for path in config_paths:
+        if path and os.path.exists(path):
             try:
                 if debug:
-                    print(f"⚠️ Attempting to load config file from: {config_path}")
-                with open(config_path, "r", encoding="utf-8") as file:
+                    print(f"⚠️ Attempting to load config file from: {path}")
+                with open(path, "r", encoding="utf-8") as file:
                     config = json.load(file)
                     if debug:
-                        print(f"⚠️ Successfully loaded config file: {config_path}")
+                        print(f"⚠️ Successfully loaded config file: {path}")
                     return config
             except json.JSONDecodeError as e:
-                print(f"⚠️ Error decoding JSON from the config file {config_path}: {e}")
+                print(f"⚠️ Error decoding JSON from the config file {path}: {e}")
             except Exception as e:
-                print(f"⚠️ Unexpected error reading config file {config_path}: {e}")
+                print(f"⚠️ Unexpected error reading config file {path}: {e}")
 
     print("⚠️ Config file not found in any checked locations, using default settings.")
     return default_config
@@ -813,7 +820,13 @@ def print_cve_header(cve_id):
     print(f"{GREEN}╚{line}╝{ENDC}\n")
 
 
-def main(cve_ids, export_format=None, import_file=None, import_type=None):
+def main(cve_ids, export_format=None, import_file=None, import_type=None, config_path=None, debug=False):
+    global config
+    if config_path:
+        config = load_config(config_path=config_path, debug=debug)
+    else:
+        config = load_config(debug=debug)
+
     all_results = []
     if export_format:
         export_format = export_format.lower()
@@ -1014,7 +1027,6 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None):
     elif export_format == "html":
         export_to_html(all_results, cve_ids)
 
-
 def cli():
     display_banner()
     parser = argparse.ArgumentParser(
@@ -1025,7 +1037,7 @@ def cli():
         type=str,
         nargs="*",
         default=[],
-        help="Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE-YYYY-NNNNN. This argument is optional if an import file is provided using the -n option.",
+        help="Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE-YYYY-NNNNN. This argument is optional if an import file is provided using the -i option.",
     )
     parser.add_argument(
         "-e",
@@ -1046,6 +1058,12 @@ def cli():
         help="Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.",
     )
     parser.add_argument(
+        "-c",
+        "--config",
+        type=str,
+        help="Path to a custom config file.",
+    )
+    parser.add_argument(
         "-d",
         "--debug",
         action="store_true",
@@ -1054,11 +1072,7 @@ def cli():
 
     args = parser.parse_args()
 
-    global config
-    config = load_config(args.debug)
-
-    main(args.cve_ids, args.export, args.import_file, args.type)
-
+    main(args.cve_ids, args.export, args.import_file, args.type, args.config, args.debug)
 
 if __name__ == "__main__":
     cli()
