@@ -148,7 +148,11 @@
                             <tbody>
                                 <tr>
                                     <td>Score</td>
-                                    <td>{{ cve['EPSS Data']['data'][0]['epss'] if cve['EPSS Data'] and cve['EPSS Data'].get('data') else 'N/A' }}% Probability of exploitation</td>
+                                    {% if cve['EPSS Data'] and cve['EPSS Data'].get('data') %}
+                                    <td>{{ "%.2f" % (cve['EPSS Data']['data'][0]['epss'] * 100) }}% Probability of exploitation</td>
+                                    {% else %}
+                                    <td>N/A</td>
+                                    {% endif %}                                                                                                   
                                 </tr>
                             </tbody>
                         </table>
@@ -169,90 +173,75 @@
                         </table>
                     </div>
                     <div class="mb-3">
-                        <h4><span class="icon">💣</span> GitHub Exploits</h4>
-                        <table class="table table-sm">
-                            <tbody>
-                                {% for poc in cve['GitHub Data']['pocs'] %}
-                                <tr>
-                                    <td>{{ poc['created_at']|datetimeformat }}</td>
-                                    <td><a href="{{ poc['html_url'] }}" target="_blank">{{ poc['html_url'] }}</a></td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="2">N/A</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mb-3">
-                        <h4><span class="icon">💥</span> VulnCheck Exploits</h4>
-                        <table class="table table-sm">
-                            <tbody>
-                                {% for item in cve['VulnCheck Data']['data'] %}
-                                {% for xdb in item['vulncheck_xdb'] %}
-                                <tr>
-                                    <td>{{ xdb['date_added']|datetimeformat }}</td>
-                                    <td><a href="{{ xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '') }}" target="_blank">{{ xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '') }}</a></td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="2">N/A</td>
-                                </tr>
-                                {% endfor %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mb-3">
-                        <h4><span class="icon">👾</span> Exploit-DB Exploits</h4>
-                        <table class="table table-sm">
-                            <tbody>
-                                {% for item in cve['ExploitDB Data'] %}
-                                <tr>
-                                    <td>{{ item['date']|datetimeformat }}</td>
-                                    <td><a href="https://www.exploit-db.com/exploits/{{ item['id'] }}" target="_blank">https://www.exploit-db.com/exploits/{{ item['id'] }}</a></td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="2">N/A</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mb-3">
-                        <h4><span class="icon">🎆</span> PacketStorm Exploits</h4>
-                        <table class="table table-sm">
-                            <tbody>
-                                <tr>
-                                    <td>URL</td>
-                                    <td>
-                                        <a href="{{ cve['PacketStorm Data']['packetstorm_url'] }}" target="_blank">{{ cve['PacketStorm Data']['packetstorm_url'] }}</a>
-                                    </td>
-                                </tr>
-                                {% if not cve['PacketStorm Data'] or not cve['PacketStorm Data']['packetstorm_url'] %}
-                                <tr>
-                                    <td colspan="2">N/A</td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="mb-3">
-                        <h4><span class="icon">⚛️</span> Nuclei Template</h4>
-                        <table class="table table-sm">
-                            <tbody>
-                                <tr>
-                                    <td>URL</td>
-                                    <td>
-                                        <a href="https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{{ cve['Nuclei Data']['file_path'] if cve['Nuclei Data'] else '#' }}" target="_blank">
-                                            {{ cve['Nuclei Data']['file_path'] if cve['Nuclei Data'] else 'N/A' }}
-                                        </a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <h4><span class="icon">💣</span> Public Exploits (Total: {{ cve['Public Exploits Total'] }})</h4>
+                        {% if cve['GitHub Data']['pocs'] %}
+                        <div class="mb-3">
+                            <h4>GitHub</h4>
+                            <table class="table table-sm">
+                                <tbody>
+                                    {% for poc in cve['GitHub Data']['pocs'] %}
+                                    <tr>
+                                        <td>{{ poc['created_at']|datetimeformat }}</td>
+                                        <td><a href="{{ poc['html_url'] }}" target="_blank">{{ poc['html_url'] }}</a></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                        {% if cve['VulnCheck Data']['data'] %}
+                        <div class="mb-3">
+                            <h4>VulnCheck</h4>
+                            <table class="table table-sm">
+                                <tbody>
+                                    {% for item in cve['VulnCheck Data']['data'] %}
+                                    {% for xdb in item['vulncheck_xdb'] %}
+                                    <tr>
+                                        <td>{{ xdb['date_added']|datetimeformat }}</td>
+                                        <td><a href="{{ xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '') }}" target="_blank">{{ xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '') }}</a></td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                        {% if cve['ExploitDB Data'] %}
+                        <div class="mb-3">
+                            <h4>Exploit-DB</h4>
+                            <table class="table table-sm">
+                                <tbody>
+                                    {% for item in cve['ExploitDB Data'] %}
+                                    <tr>
+                                        <td>{{ item['date']|datetimeformat }}</td>
+                                        <td><a href="https://www.exploit-db.com/exploits/{{ item['id'] }}" target="_blank">https://www.exploit-db.com/exploits/{{ item['id'] }}</a></td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <h4>Other</h4>
+                            <table class="table table-sm">
+                                <tbody>
+                                    {% if cve['PacketStorm Data']['packetstorm_url'] %}
+                                    <tr>
+                                        <td>PacketStorm</td>
+                                        <td><a href="{{ cve['PacketStorm Data']['packetstorm_url'] }}" target="_blank">{{ cve['PacketStorm Data']['packetstorm_url'] }}</a></td>
+                                    </tr>
+                                    {% endif %}
+                                    {% if cve['Nuclei Data']['file_path'] %}
+                                    <tr>
+                                        <td>Nuclei</td>
+                                        <td><a href="https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{{ cve['Nuclei Data']['file_path'] }}" target="_blank">
+                                            {{ cve['Nuclei Data']['file_path'] }}
+                                        </a></td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <h4><span class="icon">🕵️</span> HackerOne Hacktivity</h4>
@@ -300,14 +289,14 @@
                         <table class="table table-sm">
                             <tbody>
                                 {% for ref in cve['CVE Data']['containers']['cna']['references'] %}
-                                <ul>
-                                    <li><a href="{{ ref['url'] }}" target="_blank">{{ ref['url'] }}</a></li>
-                                </ul>
+                                    <ul>
+                                        <li><a href="{{ ref['url'] }}" target="_blank">{{ ref['url'] }}</a></li>
+                                    </ul>
                                 {% else %}
-                                <tr>
-                                    <td>N/A</td>
-                                </tr>
-                                {% endfor %}
+                                    <tr>
+                                        <td>N/A</td>
+                                    </tr>
+                                {% endfor %}                                                       
                             </tbody>
                         </table>
                     </div>
@@ -317,20 +306,6 @@
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            document.querySelectorAll('td').forEach(function (td) {
-                let content = td.textContent.trim();
-                let match = content.match(/(\d+(\.\d+)?)(?=% Probability of exploitation)/);
-                if (match) {
-                    let score = parseFloat(match[0]);
-                    if (!isNaN(score)) {
-                        td.textContent = `${(score * 100).toFixed(2)}% Probability of exploitation`;
-                    }
-                }
-            });
-        });
-    </script>
     
 </body>
 

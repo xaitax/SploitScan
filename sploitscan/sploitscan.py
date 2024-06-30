@@ -17,7 +17,7 @@ from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 
 
-VERSION = "0.10.2"
+VERSION = "0.10.3"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -107,13 +107,21 @@ def fetch_nuclei_data(cve_id):
 def fetch_vulncheck_data(cve_id):
     vulncheck_api_key = config.get("vulncheck_api_key")
     if not vulncheck_api_key:
-        return None, "API key for VulnCheck is not configured correctly."
+        return None, None
+
     headers = {
         "accept": "application/json",
         "authorization": f"Bearer {vulncheck_api_key}",
     }
-    return fetch_json_data(VULNCHECK_API_URL, params={"cve": cve_id}, headers=headers)
 
+    response = fetch_data(VULNCHECK_API_URL, params={"cve": cve_id}, headers=headers)
+    if isinstance(response, str):
+        return None, response
+    try:
+        json_data = response.json()
+        return json_data, None
+    except json.JSONDecodeError as e:
+        return None, f"❌ Error parsing JSON data from VulnCheck: {e}"
 
 def fetch_exploitdb_data(cve_id):
     response = fetch_data(EXPLOITDB_URL)
@@ -283,93 +291,87 @@ def display_cisa_status(cve_id, cisa_data, error=None):
     display_data("🛡️ CISA KEV Catalog", cisa_data, template, error)
 
 
-def display_github_data(data, error=None):
+def display_public_exploits(github_data, vulncheck_data, exploitdb_data, packetstorm_data, nuclei_data, vulncheck_error=None):
     def template(data):
+        total_exploits = 0
         entries = []
-        for index, poc in enumerate(data.get("pocs", [])):
-            created_at = poc.get("created_at", "N/A")
-            if created_at != "N/A":
-                created_date = datetime.datetime.fromisoformat(created_at)
-                created_at = created_date.strftime("%Y-%m-%d")
-                entries.append(
-                    f"├ Date:        {created_at}\n└ URL:         {poc.get('html_url', 'N/A')}"
-                )
-            if index < len(data.get("pocs", [])) - 1:
-                entries.append("|")
-        return entries if entries else ["└ ❌ No data found."]
 
-    display_data("💣 GitHub Exploits", data, template, error)
+        if github_data and github_data.get("pocs"):
+            entries.append("├ GitHub")
+            sorted_pocs = sorted(github_data["pocs"], key=lambda x: x.get("created_at", ""), reverse=True)
+            for poc in sorted_pocs:
+                created_at = poc.get("created_at", "N/A")
+                if created_at != "N/A":
+                    created_date = datetime.datetime.fromisoformat(created_at)
+                    created_at = created_date.strftime("%Y-%m-%d")
+                entries.append(f"│  ├ Date: {created_at} - {poc.get('html_url', 'N/A')}")
+                total_exploits += 1
+            entries[-1] = entries[-1].replace("├", "└")
 
-
-def display_vulncheck_data(vulncheck_data, error=None):
-    def template(data):
-        entries = []
-        for index, item in enumerate(data.get("data", [])):
-            for xdb_index, xdb in enumerate(item.get("vulncheck_xdb", [])):
+        if vulncheck_data and isinstance(vulncheck_data, dict) and vulncheck_data.get("data"):
+            entries.append("│")
+            entries.append("├ VulnCheck")
+            sorted_vulncheck = sorted(
+                (xdb for item in vulncheck_data["data"] for xdb in item.get("vulncheck_xdb", [])),
+                key=lambda x: x.get("date_added", ""),
+                reverse=True
+            )
+            for xdb in sorted_vulncheck:
                 date_added = xdb.get("date_added", "N/A")
                 if date_added != "N/A":
                     try:
-                        date_added = datetime.datetime.fromisoformat(
-                            date_added.rstrip("Z")
-                        ).strftime("%Y-%m-%d")
+                        date_added = datetime.datetime.fromisoformat(date_added.rstrip("Z")).strftime("%Y-%m-%d")
                     except ValueError:
                         pass
-                github_url = (
-                    xdb.get("clone_ssh_url", "")
-                    .replace("git@github.com:", "https://github.com/")
-                    .replace(".git", "")
-                )
-                entries.append(
-                    f"├ Date:        {date_added}\n└ URL:         {github_url}"
-                )
-                if (
-                    index < len(data.get("data", [])) - 1
-                    or xdb_index < len(item.get("vulncheck_xdb", [])) - 1
-                ):
-                    entries.append("|")
-        return entries if entries else ["└ ❌ No data found."]
+                github_url = xdb.get("clone_ssh_url", "").replace("git@github.com:", "https://github.com/").replace(".git", "")
+                entries.append(f"│  ├ Date: {date_added} - {github_url}")
+                total_exploits += 1
+            entries[-1] = entries[-1].replace("├", "└")
 
-    display_data("💥 VulnCheck Exploits", vulncheck_data, template, error)
+        if vulncheck_error:
+            entries.append("│")
+            entries.append(f"└ ❌ VulnCheck Error: {vulncheck_error}")
 
+        if exploitdb_data:
+            entries.append("│")
+            entries.append("├ Exploit-DB")
+            sorted_exploitdb = sorted(exploitdb_data, key=lambda x: x["date"], reverse=True)
+            for item in sorted_exploitdb:
+                url = f"https://www.exploit-db.com/exploits/{item['id']}"
+                entries.append(f"│  ├ Date: {item['date']} - {url}")
+                total_exploits += 1
+            entries[-1] = entries[-1].replace("├", "└")
 
-def display_exploitdb_data(exploitdb_data, cve_id, error=None):
-    def template(data):
-        entries = []
-        for index, item in enumerate(
-            sorted(data, key=lambda x: x["date"], reverse=True)
-        ):
-            url = f"https://www.exploit-db.com/exploits/{item['id']}"
-            entries.append(
-                f"├ Date:        {item['date']}\n└ URL:         {url}"
-            )
-            if index < len(data) - 1:
-                entries.append("|")
-        return entries if entries else ["└ ❌ No data found."]
+        other_entries = []
+        if packetstorm_data and packetstorm_data.get("packetstorm_url"):
+            other_entries.append(f"PacketStorm: {packetstorm_data['packetstorm_url']}")
+        if nuclei_data and nuclei_data.get("file_path"):
+            base_url = "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/"
+            file_path = nuclei_data["file_path"]
+            full_url = f"{base_url}{file_path}"
+            other_entries.append(f"Nuclei: {full_url}")
+        if other_entries:
+            entries.append("│")
+            entries.append("└ Other")
+            for index, entry in enumerate(other_entries[:-1]):
+                entries.append(f"   ├ {entry}")
+            entries.append(f"   └ {other_entries[-1]}")
 
-    display_data("👾 Exploit-DB Exploits", exploitdb_data, template, error)
-
-
-def display_packetstorm_data(packetstorm_data, error=None):
-    def template(data):
-        return [f"└ URL:         {data['packetstorm_url']}"]
-
-    display_data("🎆 PacketStorm Exploits", packetstorm_data, template, error)
-
-
-def display_nuclei_data(nuclei_data, error=None):
-    def template(data):
-        if not data or "file_path" not in data or not data["file_path"]:
+        if not entries:
             return ["└ ❌ No data found."]
 
-        base_url = (
-            "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/"
-        )
-        file_path = data["file_path"]
-        full_url = f"{base_url}{file_path}"
-        return [f"└ URL:         {full_url}"]
+        return entries, total_exploits
 
-    display_data("⚛️ Nuclei Template", nuclei_data, template, error)
-
+    exploits, total = template(True)
+    print(f"┌───[ {BLUE}💣 Public Exploits (Total: {total}){ENDC} ]")
+    if exploits:
+        print("|")
+        for line in exploits:
+            print(line)
+        print()
+    else:
+        print("|")
+        print(f"└ ❌ No data found.\n")
 
 def display_hackerone_data(hackerone_data, error=None):
     def template(data):
@@ -485,7 +487,7 @@ def display_priority_rating(cve_id, priority):
 def load_config(config_path=None, debug=False):
     default_config = {"vulncheck_api_key": None, "openai_api_key": None}
     config_env_var = "SPLOITSCAN_CONFIG_PATH"
-    
+
     config_paths = [config_path] if config_path else []
     config_paths += [
         os.getenv(config_env_var),
@@ -760,13 +762,43 @@ def export_to_html(all_results, cve_ids):
 
     def handle_cvss(data):
         for result in data:
-            metrics = result.get("CVE Data", {}).get(
-                "containers", {}).get("cna", {}).get("metrics", [])
+            result["Public Exploits Total"] = sum([
+                len(result.get("GitHub Data", {}).get("pocs", [])),
+                sum(len(item.get("vulncheck_xdb", [])) for item in result.get("VulnCheck Data", {}).get("data", [])),
+                len(result.get("ExploitDB Data", []))
+            ])
+            
+            if "GitHub Data" in result and "pocs" in result["GitHub Data"]:
+                result["GitHub Data"]["pocs"] = sorted(result["GitHub Data"]["pocs"], key=lambda x: x.get("created_at", ""), reverse=True)
+            
+            if "VulnCheck Data" in result and "data" in result["VulnCheck Data"]:
+                for item in result["VulnCheck Data"]["data"]:
+                    if "vulncheck_xdb" in item:
+                        item["vulncheck_xdb"] = sorted(item["vulncheck_xdb"], key=lambda x: x.get("date_added", ""), reverse=True)
+            
+            if "ExploitDB Data" in result:
+                result["ExploitDB Data"] = sorted(result["ExploitDB Data"], key=lambda x: x.get("date", ""), reverse=True)
+            
+            if "EPSS Data" in result and "data" in result["EPSS Data"] and len(result["EPSS Data"]["data"]) > 0:
+                result["EPSS Data"]["data"][0]["epss"] = try_parse_float(result["EPSS Data"]["data"][0].get("epss"))
+            
+            metrics = result.get("CVE Data", {}).get("containers", {}).get("cna", {}).get("metrics", [])
             for metric in metrics:
-                if "cvssV3_1" not in metric and "cvssV3" not in metric:
+                cvss_data = metric.get("cvssV3_1", metric.get("cvssV3"))
+                if cvss_data:
+                    cvss_data["baseScore"] = try_parse_float(cvss_data.get("baseScore"))
+                    cvss_data["baseSeverity"] = str(cvss_data.get("baseSeverity", "N/A"))
+                    cvss_data["vectorString"] = str(cvss_data.get("vectorString", "N/A"))
+                else:
                     metric["cvssV3_1"] = {
-                        "baseScore": "N/A", "baseSeverity": "N/A", "vectorString": "N/A"}
+                        "baseScore": 0.0, "baseSeverity": "N/A", "vectorString": "N/A"}
         return data
+
+    def try_parse_float(value):
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return 0.0
 
     try:
         display_data("📁 HTML Export", all_results, template)
@@ -819,13 +851,109 @@ def print_cve_header(cve_id):
     print(f"{GREEN}║{header}║{ENDC}")
     print(f"{GREEN}╚{line}╝{ENDC}\n")
 
+def fetch_and_display_cve_data(cve_id):
+    cve_data, cve_error = fetch_github_cve_data(cve_id)
+    display_cve_data(cve_data, cve_error)
+    return cve_data
+
+def fetch_and_display_epss_score(cve_id):
+    epss_data, epss_error = fetch_epss_score(cve_id)
+    display_epss_score(epss_data, epss_error)
+    return epss_data
+
+def fetch_and_display_cisa_status(cve_id):
+    cisa_data, cisa_error = fetch_cisa_data()
+    display_cisa_status(cve_id, cisa_data, cisa_error)
+    relevant_cisa_data = next(
+        (item for item in cisa_data.get("vulnerabilities", []) if item["cveID"] == cve_id),
+        None,
+    )
+    return relevant_cisa_data
+
+def fetch_and_display_public_exploits(cve_id):
+    github_data, github_error = fetch_json_data(GITHUB_API_URL, params={"cve_id": cve_id})
+    vulncheck_data, vulncheck_error = fetch_vulncheck_data(cve_id)
+    exploitdb_data, exploitdb_error = fetch_exploitdb_data(cve_id)
+    packetstorm_data, packetstorm_error = fetch_packetstorm_data(cve_id)
+    nuclei_data, nuclei_error = fetch_nuclei_data(cve_id)
+    
+    display_public_exploits(github_data, vulncheck_data, exploitdb_data, packetstorm_data, nuclei_data, vulncheck_error)
+    
+    return {
+        "github_data": github_data,
+        "vulncheck_data": vulncheck_data if isinstance(vulncheck_data, dict) else {},
+        "exploitdb_data": exploitdb_data,
+        "packetstorm_data": packetstorm_data,
+        "nuclei_data": nuclei_data
+    }
+
+def fetch_and_display_hackerone_data(cve_id):
+    hackerone_data, hackerone_error = fetch_hackerone_cve_details(cve_id)
+    display_hackerone_data(hackerone_data, hackerone_error)
+    return hackerone_data
+
+def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits):
+    published = cve_data["cveMetadata"].get("datePublished", "N/A")
+    if published != "N/A":
+        published = datetime.datetime.fromisoformat(published.rstrip("Z")).strftime("%Y-%m-%d")
+
+    description = (
+        next(
+            (desc["value"] for desc in cve_data["containers"]["cna"].get("descriptions", []) if desc["lang"] == "en"),
+            "No description available",
+        )
+        .replace("\n\n", " ")
+        .replace("  ", " ")
+    )
+    metrics = cve_data["containers"]["cna"].get("metrics", [])
+    baseScore, baseSeverity, vectorString = "N/A", "N/A", "N/A"
+    for metric in metrics:
+        if "cvssV3_1" in metric:
+            cvss_data = metric["cvssV3_1"]
+            baseScore = cvss_data.get("baseScore", "N/A")
+            baseSeverity = cvss_data.get("baseSeverity", "N/A")
+            vectorString = cvss_data.get("vectorString", "N/A")
+            break
+
+    epss_score = epss_data["data"][0].get("epss", "N/A") if epss_data and "data" in epss_data else "N/A"
+
+    cisa_status = relevant_cisa_data["cisa_status"] if relevant_cisa_data else "N/A"
+    ransomware_use = relevant_cisa_data["ransomware_use"] if relevant_cisa_data else "N/A"
+
+    github_exploits = "\n".join(
+        [f"{poc['created_at']}: {poc['html_url']}" for poc in public_exploits["github_data"].get("pocs", [])]
+    ) if public_exploits["github_data"] else "N/A"
+
+    vulncheck_exploits = "\n".join(
+        [f"{xdb['date_added']}: {xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '')}"
+         for item in public_exploits["vulncheck_data"].get("data", [])
+         for xdb in item.get("vulncheck_xdb", [])]
+    ) if public_exploits["vulncheck_data"] else "N/A"
+
+    packetstorm_url = public_exploits["packetstorm_data"].get("packetstorm_url", "N/A")
+
+    nuclei_url = f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{public_exploits['nuclei_data']['file_path']}" if public_exploits["nuclei_data"] and "file_path" in public_exploits["nuclei_data"] else "N/A"
+
+    references = "\n".join([ref["url"] for ref in cve_data["containers"]["cna"].get("references", [])]) if cve_data else "N/A"
+
+    return f"""
+    Published: {published}
+    Base Score: {baseScore} ({baseSeverity})
+    Vector: {vectorString}
+    Description: {description}
+    EPSS Score: {epss_score}
+    CISA Status: {cisa_status}
+    Ransomware Use: {ransomware_use}
+    GitHub Exploits: {github_exploits}
+    VulnCheck Exploits: {vulncheck_exploits}
+    PacketStorm URL: {packetstorm_url}
+    Nuclei Template: {nuclei_url}
+    Further References: {references}
+    """
 
 def main(cve_ids, export_format=None, import_file=None, import_type=None, config_path=None, debug=False):
     global config
-    if config_path:
-        config = load_config(config_path=config_path, debug=debug)
-    else:
-        config = load_config(debug=debug)
+    config = load_config(config_path=config_path, debug=debug) if config_path else load_config(debug=debug)
 
     all_results = []
     if export_format:
@@ -836,188 +964,51 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, config
             print("❌ No valid CVE IDs found in the provided file.")
             return
     if not cve_ids:
-        print(
-            "❌ No CVE IDs provided. Please provide CVE IDs or an import file and type."
-        )
+        print("❌ No CVE IDs provided. Please provide CVE IDs or an import file and type.")
         return
+
     for cve_id in cve_ids:
         cve_id = cve_id.upper()
         if not is_valid_cve_id(cve_id):
-            print(
-                f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN."
-            )
+            print(f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN.")
             continue
 
-        cve_result = {"CVE ID": cve_id}
         print_cve_header(cve_id)
 
-        cve_data, cve_error = fetch_github_cve_data(cve_id)
-        display_cve_data(cve_data, cve_error)
-
+        cve_data = fetch_and_display_cve_data(cve_id)
         if not cve_data:
             continue
 
-        epss_data, epss_error = fetch_epss_score(cve_id)
-        display_epss_score(epss_data, epss_error)
+        epss_data = fetch_and_display_epss_score(cve_id)
+        relevant_cisa_data = fetch_and_display_cisa_status(cve_id)
+        public_exploits = fetch_and_display_public_exploits(cve_id)
+        hackerone_data = fetch_and_display_hackerone_data(cve_id)
 
-        cisa_data, cisa_error = fetch_cisa_data()
-        display_cisa_status(cve_id, cisa_data, cisa_error)
-
-        relevant_cisa_data = next(
-            (
-                item
-                for item in cisa_data.get("vulnerabilities", [])
-                if item["cveID"] == cve_id
-            ),
-            None,
-        )
-
-        github_data, github_error = fetch_json_data(
-            GITHUB_API_URL, params={"cve_id": cve_id}
-        )
-        display_github_data(github_data, github_error)
-
-        vulncheck_data, vulncheck_error = fetch_vulncheck_data(cve_id)
-        display_vulncheck_data(vulncheck_data, vulncheck_error)
-
-        exploitdb_data, exploitdb_error = fetch_exploitdb_data(cve_id)
-        display_exploitdb_data(exploitdb_data, cve_id, exploitdb_error)
-
-        packetstorm_data, packetstorm_error = fetch_packetstorm_data(cve_id)
-        display_packetstorm_data(packetstorm_data, packetstorm_error)
-
-        nuclei_data, nuclei_error = fetch_nuclei_data(cve_id)
-        display_nuclei_data(nuclei_data, nuclei_error)
-
-        hackerone_data, hackerone_error = fetch_hackerone_cve_details(cve_id)
-        display_hackerone_data(hackerone_data, hackerone_error)
-
-        published = cve_data["cveMetadata"].get("datePublished", "N/A")
-        if published != "N/A":
-            published = datetime.datetime.fromisoformat(published.rstrip("Z")).strftime(
-                "%Y-%m-%d"
-            )
-
-        description = (
-            next(
-                (
-                    desc["value"]
-                    for desc in cve_data["containers"]["cna"].get("descriptions", [])
-                    if desc["lang"] == "en"
-                ),
-                "No description available",
-            )
-            .replace("\n\n", " ")
-            .replace("  ", " ")
-        )
-        metrics = cve_data["containers"]["cna"].get("metrics", [])
-        baseScore, baseSeverity, vectorString = "N/A", "N/A", "N/A"
-        for metric in metrics:
-            if "cvssV3_1" in metric:
-                cvss_data = metric["cvssV3_1"]
-                baseScore = cvss_data.get("baseScore", "N/A")
-                baseSeverity = cvss_data.get("baseSeverity", "N/A")
-                vectorString = cvss_data.get("vectorString", "N/A")
-                break
-
-        epss_score = (
-            epss_data["data"][0].get("epss", "N/A")
-            if epss_data and "data" in epss_data
-            else "N/A"
-        )
-
-        cisa_status = relevant_cisa_data["cisa_status"] if relevant_cisa_data else "N/A"
-        ransomware_use = (
-            relevant_cisa_data["ransomware_use"] if relevant_cisa_data else "N/A"
-        )
-
-        github_exploits = (
-            "\n".join(
-                [
-                    f"{poc['created_at']}: {poc['html_url']}"
-                    for poc in github_data.get("pocs", [])
-                ]
-            )
-            if github_data
-            else "N/A"
-        )
-
-        vulncheck_exploits = (
-            "\n".join(
-                [
-                    f"{xdb['date_added']}: {xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '')}"
-                    for item in vulncheck_data.get("data", [])
-                    for xdb in item.get("vulncheck_xdb", [])
-                ]
-            )
-            if vulncheck_data
-            else "N/A"
-        )
-
-        packetstorm_url = packetstorm_data.get("packetstorm_url", "N/A")
-
-        nuclei_url = (
-            f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{nuclei_data['file_path']}"
-            if nuclei_data and "file_path" in nuclei_data
-            else "N/A"
-        )
-
-        references = (
-            "\n".join(
-                [
-                    ref["url"]
-                    for ref in cve_data["containers"]["cna"].get("references", [])
-                ]
-            )
-            if cve_data
-            else "N/A"
-        )
-
-        cve_details = f"""
-        Published: {published}
-        Base Score: {baseScore} ({baseSeverity})
-        Vector: {vectorString}
-        Description: {description}
-        EPSS Score: {epss_score}
-        CISA Status: {cisa_status}
-        Ransomware Use: {ransomware_use}
-        GitHub Exploits: {github_exploits}
-        VulnCheck Exploits: {vulncheck_exploits}
-        PacketStorm URL: {packetstorm_url}
-        Nuclei Template: {nuclei_url}
-        Further References: {references}
-        """
+        cve_details = compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits)
         risk_assessment = get_risk_assessment(cve_details, cve_data)
         display_ai_risk_assessment(cve_details, cve_data)
 
         priority = calculate_priority(
-            cve_id,
-            cve_data,
-            epss_data,
-            github_data,
-            cisa_data,
-            vulncheck_data,
-            exploitdb_data,
+            cve_id, cve_data, epss_data, public_exploits["github_data"], relevant_cisa_data,
+            public_exploits["vulncheck_data"], public_exploits["exploitdb_data"]
         )
         display_priority_rating(cve_id, priority)
 
-        display_cve_references(cve_data, cve_error)
+        display_cve_references(cve_data)
 
-        cve_result.update(
-            {
-                "CVE Data": cve_data,
-                "EPSS Data": epss_data,
-                "CISA Data": relevant_cisa_data,
-                "Nuclei Data": nuclei_data,
-                "GitHub Data": github_data,
-                "VulnCheck Data": vulncheck_data,
-                "ExploitDB Data": exploitdb_data,
-                "PacketStorm Data": packetstorm_data,
-                "HackerOne Data": hackerone_data,
-                "Priority": {"Priority": priority},
-                "Risk Assessment": risk_assessment,
-            }
-        )
+        cve_result = {
+            "CVE Data": cve_data,
+            "EPSS Data": epss_data,
+            "CISA Data": relevant_cisa_data,
+            "Nuclei Data": public_exploits["nuclei_data"],
+            "GitHub Data": public_exploits["github_data"],
+            "VulnCheck Data": public_exploits["vulncheck_data"],
+            "ExploitDB Data": public_exploits["exploitdb_data"],
+            "PacketStorm Data": public_exploits["packetstorm_data"],
+            "HackerOne Data": hackerone_data,
+            "Priority": {"Priority": priority},
+            "Risk Assessment": risk_assessment,
+        }
         all_results.append(cve_result)
 
     if export_format == "json":
@@ -1026,6 +1017,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, config
         export_to_csv(all_results, cve_ids)
     elif export_format == "html":
         export_to_html(all_results, cve_ids)
+
 
 def cli():
     display_banner()
