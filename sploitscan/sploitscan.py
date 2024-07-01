@@ -292,7 +292,7 @@ def display_cisa_status(cve_id, cisa_data, error=None):
 
 
 def display_public_exploits(github_data, vulncheck_data, exploitdb_data, packetstorm_data, nuclei_data, vulncheck_error=None):
-    def template(data):
+    def template():
         total_exploits = 0
         entries = []
 
@@ -358,11 +358,11 @@ def display_public_exploits(github_data, vulncheck_data, exploitdb_data, packets
             entries.append(f"   └ {other_entries[-1]}")
 
         if not entries:
-            return ["└ ❌ No data found."]
+            return ["└ ❌ No data found."], total_exploits
 
         return entries, total_exploits
 
-    exploits, total = template(True)
+    exploits, total = template()
     print(f"┌───[ {BLUE}💣 Public Exploits (Total: {total}){ENDC} ]")
     if exploits:
         print("|")
@@ -372,6 +372,7 @@ def display_public_exploits(github_data, vulncheck_data, exploitdb_data, packets
     else:
         print("|")
         print(f"└ ❌ No data found.\n")
+
 
 def display_hackerone_data(hackerone_data, error=None):
     def template(data):
