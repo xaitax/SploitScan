@@ -17,7 +17,7 @@ from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 
 
-VERSION = "0.10.3"
+VERSION = "0.10.4"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -216,8 +216,7 @@ def display_cve_data(cve_data, error=None):
         cve_item = data["containers"]["cna"]
         published = data["cveMetadata"].get("datePublished", "")
         if published:
-            published_date = datetime.datetime.fromisoformat(
-                published.rstrip("Z"))
+            published_date = datetime.datetime.fromisoformat(published.rstrip("Z"))
             published = published_date.strftime("%Y-%m-%d")
         description = (
             next(
@@ -234,8 +233,10 @@ def display_cve_data(cve_data, error=None):
         wrapped_description = textwrap.fill(
             description, width=100, subsequent_indent=" " * 15
         )
+
         metrics = cve_item.get("metrics", [])
         baseScore, baseSeverity, vectorString = "N/A", "N/A", "N/A"
+
         for metric in metrics:
             cvss_data = metric.get("cvssV3_1") or metric.get("cvssV3")
             if cvss_data:
@@ -244,6 +245,21 @@ def display_cve_data(cve_data, error=None):
                 vectorString = cvss_data.get("vectorString", "N/A")
                 if baseScore != "N/A":
                     break
+        
+        if baseScore == "N/A":
+            adp = data["containers"].get("adp", [])
+            for adp_entry in adp:
+                for metric in adp_entry.get("metrics", []):
+                    cvss_data = metric.get("cvssV3_1") or metric.get("cvssV3")
+                    if cvss_data:
+                        baseScore = cvss_data.get("baseScore", "N/A")
+                        baseSeverity = cvss_data.get("baseSeverity", "N/A")
+                        vectorString = cvss_data.get("vectorString", "N/A")
+                        if baseScore != "N/A":
+                            break
+                if baseScore != "N/A":
+                    break
+
         return [
             f"├ Published:   {published}",
             f"├ Base Score:  {baseScore} ({baseSeverity})",
