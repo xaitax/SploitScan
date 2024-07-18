@@ -1,5 +1,10 @@
 # 📆 Changelog
 
+## [18. July 2024] - Version 0.10.4
+
+- **CVE ID Export**: Fixed the display of the CVE ID not exporting in HTML.
+- **Enhanced CVE Retrieval**: Fixed the retrieval of missing CVE information if nested differently.
+
 ## [30. June 2024] - Version 0.10.3
 
 - **Main Function Refactoring**: Refactored the main function into smaller, modular functions to improve maintainability and readability.
