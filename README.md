@@ -35,7 +35,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **User-Friendly Interface**: Easy to use, providing clear and concise information.
 - **Comprehensive Security Tool**: Ideal for quick security assessments and staying informed about recent vulnerabilities.
 
-![sploitscan_v0 10 1](https://github.com/xaitax/SploitScan/assets/5014849/440c68dc-bd05-4770-9cd9-83b26ab9e6f1)
+![sploitscan_v0 10 4](https://github.com/user-attachments/assets/4f0ff4fd-9fb4-453f-92a2-f12f41714edd)
 
 ## 💣 Supported Exploit Databases
 
