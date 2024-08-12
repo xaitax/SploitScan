@@ -314,7 +314,8 @@ def display_public_exploits(github_data, vulncheck_data, exploitdb_data, packets
 
         if github_data and github_data.get("pocs"):
             entries.append("├ GitHub")
-            sorted_pocs = sorted(github_data["pocs"], key=lambda x: x.get("created_at", ""), reverse=True)
+            sorted_pocs = sorted(github_data["pocs"], key=lambda x: x.get("created_at", ""), reverse=True) if github_data["pocs"] else []
+
             for poc in sorted_pocs:
                 created_at = poc.get("created_at", "N/A")
                 if created_at != "N/A":
@@ -932,7 +933,8 @@ def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_
             vectorString = cvss_data.get("vectorString", "N/A")
             break
 
-    epss_score = epss_data["data"][0].get("epss", "N/A") if epss_data and "data" in epss_data else "N/A"
+    epss_score = epss_data["data"][0].get("epss", "N/A") if epss_data and "data" in epss_data and epss_data["data"] else "N/A"
+
 
     cisa_status = relevant_cisa_data["cisa_status"] if relevant_cisa_data else "N/A"
     ransomware_use = relevant_cisa_data["ransomware_use"] if relevant_cisa_data else "N/A"
@@ -951,6 +953,7 @@ def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_
 
     nuclei_url = f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{public_exploits['nuclei_data']['file_path']}" if public_exploits["nuclei_data"] and "file_path" in public_exploits["nuclei_data"] else "N/A"
 
+    references_list = cve_data["containers"]["cna"].get("references", [])
     references = "\n".join([ref["url"] for ref in cve_data["containers"]["cna"].get("references", [])]) if cve_data else "N/A"
 
     return f"""
