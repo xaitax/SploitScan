@@ -1,5 +1,9 @@
 # 📆 Changelog
 
+## [13. August 2024] - Version 0.10.5
+
+- **General Improvements**: Prevent IndexError by checking for non-empty lists before accessing elements.
+
 ## [18. July 2024] - Version 0.10.4
 
 - **CVE ID Export**: Fixed the display of the CVE ID not exporting in HTML.

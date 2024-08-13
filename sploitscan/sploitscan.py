@@ -17,7 +17,7 @@ from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 
 
-VERSION = "0.10.4"
+VERSION = "0.10.5"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
