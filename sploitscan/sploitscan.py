@@ -17,7 +17,7 @@ from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 
 
-VERSION = "0.10.5"
+VERSION = "0.11.0"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -646,84 +646,95 @@ def display_ai_risk_assessment(cve_details, cve_data):
 
 
 
-def import_vulnerability_data(file_path, file_type):
+def import_vulnerability_data(file_path, file_type=None):
     if not os.path.exists(file_path):
         print(f"❌ Error: The file '{file_path}' does not exist.")
         return []
+
+    if not file_type:
+        if is_plaintext_cve_list(file_path):
+            return import_file(file_path, parse_plaintext_cve_list)
+        else:
+            print(f"❌ Error: The file '{file_path}' does not appear to be a valid list of CVEs. Please specify the correct file type using the --type option.")
+            return []
+
     if file_type == "nessus":
-        return import_nessus(file_path)
+        return import_file(file_path, parse_nessus_file)
     if file_type == "nexpose":
-        return import_nexpose(file_path)
+        return import_file(file_path, parse_nexpose_file)
     if file_type == "openvas":
-        return import_openvas(file_path)
+        return import_file(file_path, parse_openvas_file)
     if file_type == "docker":
-        return import_docker(file_path)
+        return import_file(file_path, parse_docker_file)
+
     print(f"❌ Unsupported file type: {file_type}")
     return []
 
 
-def import_nessus(file_path):
-    def parse_nessus_file(path):
-        tree = ET.parse(path)
-        root = tree.getroot()
-        return [
-            cve.text.strip().upper()
-            for report_item in root.findall(".//ReportItem")
-            for cve in report_item.findall("cve")
-            if is_valid_cve_id(cve.text.strip().upper())
-        ]
-
-    return import_file(file_path, parse_nessus_file)
-
-
-def import_nexpose(file_path):
-    def parse_nexpose_file(path):
-        tree = ET.parse(path)
-        root = tree.getroot()
-        return [
-            link.get("LinkTitle").upper()
-            for link in root.findall(".//URLLink")
-            if link.get("LinkTitle", "").startswith("CVE-")
-        ]
-
-    return import_file(file_path, parse_nexpose_file)
+def is_plaintext_cve_list(file_path):
+    try:
+        with open(file_path, 'r') as file:
+            for _ in range(10):
+                line = file.readline().strip()
+                if line and not is_valid_cve_id(line.upper()):
+                    return False
+        return True
+    except Exception as e:
+        print(f"❌ Error reading file '{file_path}': {e}")
+        return False
 
 
-def import_openvas(file_path):
-    def parse_openvas_file(path):
-        tree = ET.parse(path)
-        root = tree.getroot()
-        return [
-            ref.attrib.get("id").upper()
-            for ref in root.findall(".//ref[@type='cve']")
-            if is_valid_cve_id(ref.attrib.get("id").upper())
-        ]
-
-    return import_file(file_path, parse_openvas_file)
+def parse_plaintext_cve_list(file):
+    return [line.strip().upper() for line in file if is_valid_cve_id(line.strip().upper())]
 
 
-def import_docker(file_path):
-    def parse_docker_file(path):
-        with open(path, "r") as file:
-            data = json.load(file)
-        return [
-            rule.get("id", "").upper()
-            for run in data.get("runs", [])
-            for rule in run.get("tool", {}).get("driver", {}).get("rules", [])
-            if rule.get("id", "").startswith("CVE-")
-        ]
+def parse_nessus_file(file):
+    tree = ET.parse(file)
+    root = tree.getroot()
+    return [
+        cve.text.strip().upper()
+        for report_item in root.findall(".//ReportItem")
+        for cve in report_item.findall("cve")
+        if is_valid_cve_id(cve.text.strip().upper())
+    ]
 
-    return import_file(file_path, parse_docker_file)
+
+def parse_nexpose_file(file):
+    tree = ET.parse(file)
+    root = tree.getroot()
+    return [
+        link.get("LinkTitle").upper()
+        for link in root.findall(".//URLLink")
+        if link.get("LinkTitle", "").startswith("CVE-")
+    ]
+
+
+def parse_openvas_file(file):
+    tree = ET.parse(file)
+    root = tree.getroot()
+    return [
+        ref.attrib.get("id").upper()
+        for ref in root.findall(".//ref[@type='cve']")
+        if is_valid_cve_id(ref.attrib.get("id").upper())
+    ]
+
+
+def parse_docker_file(file):
+    data = json.load(file)
+    return [
+        rule.get("id", "").upper()
+        for run in data.get("runs", [])
+        for rule in run.get("tool", {}).get("driver", {}).get("rules", [])
+        if rule.get("id", "").startswith("CVE-")
+    ]
 
 
 def import_file(file_path, parse_function):
     try:
-        cve_ids = parse_function(file_path)
+        with open(file_path, 'r') as file:
+            cve_ids = parse_function(file)
         unique_cve_ids = list(set(cve_ids))
-        print(
-            YELLOW
-            + f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{file_path}'.\n"
-        )
+        print(YELLOW + f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{file_path}'.\n")
         return unique_cve_ids
     except ET.ParseError as e:
         print(f"❌ Error parsing the file '{file_path}': {e}")
@@ -781,23 +792,23 @@ def export_to_html(all_results, cve_ids):
     def handle_cvss(data):
         for result in data:
             result["Public Exploits Total"] = sum([
-                len(result.get("GitHub Data", {}).get("pocs", [])),
-                sum(len(item.get("vulncheck_xdb", [])) for item in result.get("VulnCheck Data", {}).get("data", [])),
-                len(result.get("ExploitDB Data", []))
+                len(result.get("GitHub Data", {}).get("pocs", [])) if result.get("GitHub Data") else 0,
+                sum(len(item.get("vulncheck_xdb", [])) for item in result.get("VulnCheck Data", {}).get("data", [])) if result.get("VulnCheck Data") else 0,
+                len(result.get("ExploitDB Data", [])) if result.get("ExploitDB Data") else 0
             ])
             
-            if "GitHub Data" in result and "pocs" in result["GitHub Data"]:
+            if result.get("GitHub Data") and result["GitHub Data"].get("pocs"):
                 result["GitHub Data"]["pocs"] = sorted(result["GitHub Data"]["pocs"], key=lambda x: x.get("created_at", ""), reverse=True)
             
-            if "VulnCheck Data" in result and "data" in result["VulnCheck Data"]:
+            if result.get("VulnCheck Data") and result["VulnCheck Data"].get("data"):
                 for item in result["VulnCheck Data"]["data"]:
-                    if "vulncheck_xdb" in item:
+                    if item.get("vulncheck_xdb"):
                         item["vulncheck_xdb"] = sorted(item["vulncheck_xdb"], key=lambda x: x.get("date_added", ""), reverse=True)
             
-            if "ExploitDB Data" in result:
+            if result.get("ExploitDB Data"):
                 result["ExploitDB Data"] = sorted(result["ExploitDB Data"], key=lambda x: x.get("date", ""), reverse=True)
             
-            if "EPSS Data" in result and "data" in result["EPSS Data"] and len(result["EPSS Data"]["data"]) > 0:
+            if result.get("EPSS Data") and result["EPSS Data"].get("data") and len(result["EPSS Data"]["data"]) > 0:
                 result["EPSS Data"]["data"][0]["epss"] = try_parse_float(result["EPSS Data"]["data"][0].get("epss"))
             
             metrics = result.get("CVE Data", {}).get("containers", {}).get("cna", {}).get("metrics", [])
@@ -809,7 +820,8 @@ def export_to_html(all_results, cve_ids):
                     cvss_data["vectorString"] = str(cvss_data.get("vectorString", "N/A"))
                 else:
                     metric["cvssV3_1"] = {
-                        "baseScore": 0.0, "baseSeverity": "N/A", "vectorString": "N/A"}
+                        "baseScore": 0.0, "baseSeverity": "N/A", "vectorString": "N/A"
+                    }
         return data
 
     def try_parse_float(value):
@@ -838,7 +850,7 @@ def export_to_csv(all_results, cve_ids):
     def template(data):
         filename = generate_filename(cve_ids, "csv")
         keys = list(data[0].keys()) + ["Risk Assessment"]
-        with open(filename, "w", newline="") as file:
+        with open(filename, "w", newline="", encoding="utf-8") as file:
             writer = csv.DictWriter(file, fieldnames=keys)
             writer.writeheader()
             for item in data:
@@ -886,7 +898,8 @@ def fetch_and_display_cisa_status(cve_id):
         (item for item in cisa_data.get("vulnerabilities", []) if item["cveID"] == cve_id),
         None,
     )
-    return relevant_cisa_data
+    return relevant_cisa_data if relevant_cisa_data else {"cisa_status": "N/A", "ransomware_use": "N/A"}
+
 
 def fetch_and_display_public_exploits(cve_id):
     github_data, github_error = fetch_json_data(GITHUB_API_URL, params={"cve_id": cve_id})
@@ -971,21 +984,28 @@ def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_
     Further References: {references}
     """
 
-def main(cve_ids, export_format=None, import_file=None, import_type=None, config_path=None, debug=False):
+def main(cve_ids, export_format=None, import_file=None, import_type=None, config_path=None, methods=None, debug=False):
     global config
     config = load_config(config_path=config_path, debug=debug) if config_path else load_config(debug=debug)
 
     all_results = []
     if export_format:
         export_format = export_format.lower()
-    if import_file and import_type:
+    if import_file and not import_type:
+        cve_ids = import_vulnerability_data(import_file)
+        if not cve_ids:
+            print("❌ No valid CVE IDs found in the provided file.")
+            return
+    elif import_file and import_type:
         cve_ids = import_vulnerability_data(import_file, import_type)
         if not cve_ids:
             print("❌ No valid CVE IDs found in the provided file.")
             return
     if not cve_ids:
-        print("❌ No CVE IDs provided. Please provide CVE IDs or an import file and type.")
+        print("❌ No CVE IDs provided. Please provide CVE IDs or an import file.")
         return
+
+    selected_methods = methods.split(",") if methods else []
 
     for cve_id in cve_ids:
         cve_id = cve_id.upper()
@@ -999,27 +1019,42 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, config
         if not cve_data:
             continue
 
-        epss_data = fetch_and_display_epss_score(cve_id)
-        relevant_cisa_data = fetch_and_display_cisa_status(cve_id)
         public_exploits = fetch_and_display_public_exploits(cve_id)
-        hackerone_data = fetch_and_display_hackerone_data(cve_id)
 
-        cve_details = compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits)
-        risk_assessment = get_risk_assessment(cve_details, cve_data)
-        display_ai_risk_assessment(cve_details, cve_data)
+        epss_data = None
+        relevant_cisa_data = None
+        hackerone_data = None
+        priority = None
+        risk_assessment = None
 
-        priority = calculate_priority(
-            cve_id, cve_data, epss_data, public_exploits["github_data"], relevant_cisa_data,
-            public_exploits["vulncheck_data"], public_exploits["exploitdb_data"]
-        )
-        display_priority_rating(cve_id, priority)
+        if "epss" in selected_methods:
+            epss_data = fetch_and_display_epss_score(cve_id)
 
-        display_cve_references(cve_data)
+        if "cisa" in selected_methods:
+            relevant_cisa_data = fetch_and_display_cisa_status(cve_id)
+
+        if "hackerone" in selected_methods:
+            hackerone_data = fetch_and_display_hackerone_data(cve_id)
+
+        if "ai" in selected_methods:
+            cve_details = compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits)
+            risk_assessment = get_risk_assessment(cve_details, cve_data)
+            display_ai_risk_assessment(cve_details, cve_data)
+
+        if "prio" in selected_methods:
+            priority = calculate_priority(
+                cve_id, cve_data, epss_data, public_exploits["github_data"], relevant_cisa_data,
+                public_exploits["vulncheck_data"], public_exploits["exploitdb_data"]
+            )
+            display_priority_rating(cve_id, priority)
+
+        if "references" in selected_methods:
+            display_cve_references(cve_data)
 
         cve_result = {
             "CVE Data": cve_data,
             "EPSS Data": epss_data,
-            "CISA Data": relevant_cisa_data,
+            "CISA Data": relevant_cisa_data or {"cisa_status": "N/A", "ransomware_use": "N/A"},
             "Nuclei Data": public_exploits["nuclei_data"],
             "GitHub Data": public_exploits["github_data"],
             "VulnCheck Data": public_exploits["vulncheck_data"],
@@ -1037,7 +1072,6 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, config
         export_to_csv(all_results, cve_ids)
     elif export_format == "html":
         export_to_html(all_results, cve_ids)
-
 
 def cli():
     display_banner()
@@ -1064,6 +1098,12 @@ def cli():
         help="Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.",
     )
     parser.add_argument(
+        "-m",
+        "--methods",
+        type=str,
+        help="Specify which methods to run, separated by commas. Options: 'cisa', 'epss', 'hackerone', 'ai', 'prio', 'references', etc.",
+    )
+    parser.add_argument(
         "-i",
         "--import-file",
         type=str,
@@ -1084,7 +1124,7 @@ def cli():
 
     args = parser.parse_args()
 
-    main(args.cve_ids, args.export, args.import_file, args.type, args.config, args.debug)
+    main(args.cve_ids, args.export, args.import_file, args.type, args.config, args.methods, args.debug)
 
 if __name__ == "__main__":
     cli()

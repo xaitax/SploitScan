@@ -2,6 +2,9 @@
 
 
 ![SPLOITSCAN-LOGO](https://github.com/xaitax/SploitScan/assets/5014849/05f6641c-2279-456f-9e5a-329926529169)
+![Version](https://img.shields.io/github/v/release/xaitax/SploitScan)
+![License](https://img.shields.io/github/license/xaitax/SploitScan)
+
 
 ## 📜 Description
 
@@ -19,6 +22,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - 🛡️ [Patching Priority System](#️-patching-priority-system)
 - 🫱🏼‍🫲🏽 [Contributing](#-contributing)
 - 📌 [Author](#-author)
+- 📆 [Changelog](#-changelog)
 - 📚 [References](#-references)
 
 ## 🌟 Features
@@ -32,6 +36,7 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **Patching Priority System**: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
 - **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to HTML, JSON and CSV formats.
 - **Vulnerability Scanner Import**: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
+- **Granular Method Selection**: Only specific methods (e.g., `cisa`, `epss`, `hackerone`, `ai`, etc.), giving you control over what data you want to retrieve.
 - **User-Friendly Interface**: Easy to use, providing clear and concise information.
 - **Comprehensive Security Tool**: Ideal for quick security assessments and staying informed about recent vulnerabilities.
 
@@ -74,7 +79,14 @@ pip install --user sploitscan
 apt install sploitscan
 ```
 
+### Obtaining API Keys
+
+- **VulnCheck**: Sign up for a free account at [VulnCheck](https://vulncheck.com/) to get your API key.
+- **OpenAI**: Create an account and get an API key at [OpenAI](https://platform.openai.com/signup/).
+
 ### Configuration File
+
+Note: The OpenAI and VulnCheck API keys are optional. The OpenAI API key is used for AI-powered risk assessment, and the VulnCheck API key is used for VulnCheck data retrieval. If you do not intend to use these features, you can omit the configuration file or leave the API key fields blank.
 
 Create a `config.json` file in one of the following locations with your API keys:
 
@@ -105,9 +117,9 @@ $ sploitscan.py -h
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.10.3 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.11.0 / Alexander Hagenah / @xaitax / ah@primepage.de
 
-usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-i IMPORT_FILE] [-c CONFIG] [-d] [cve_ids ...]
+usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-m METHODS] [-i IMPORT_FILE] [-c CONFIG] [-d] [cve_ids ...]
 
 SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s).
 
@@ -121,6 +133,8 @@ options:
                         Optional: Export the results to a JSON, CSV, or HTML file. Specify the format: 'json', 'csv', or 'html'.
   -t {nessus,nexpose,openvas,docker}, --type {nessus,nexpose,openvas,docker}
                         Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.
+  -m METHODS, --methods METHODS
+                        Specify which methods to run, separated by commas. Options: 'cisa', 'epss', 'hackerone', 'ai', 'prio', 'references', etc.
   -i IMPORT_FILE, --import-file IMPORT_FILE
                         Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.
   -c CONFIG, --config CONFIG
@@ -148,6 +162,14 @@ Specify the type: 'nessus', 'nexpose', 'openvas', or 'docker' and provide the fi
 sploitscan --import-file path/to/yourfile.nessus --type nessus
 ```
 
+### Select Specific Methods
+
+To run only specific data retrieval methods (e.g., CISA, EPSS, AI risk assessment), use the `-m` argument:
+
+```bash
+sploitscan CVE-2024-1709 -m cisa,epss
+```
+
 ### Export Results
 
 Specify the export format: 'json', 'csv', or 'html'.
@@ -157,6 +179,10 @@ sploitscan CVE-2024-1709 -e html
 ```
 
 ### Docker
+
+Ensure you have Docker installed. For installation instructions, see [Docker's official installation guide](https://docs.docker.com/get-docker/).
+
+To build and run SploitScan in Docker:
 
 ```shell
 docker build -t sploitscan .
@@ -257,7 +283,7 @@ This system assists users in making informed decisions on which vulnerabilities 
 
 ## 🫱🏼‍🫲🏽 Contributing
 
-Contributions are welcome. Please feel free to fork, modify, and make pull requests or report issues.
+Contributions are welcome! Whether it's fixing bugs, adding new features, or improving the documentation, feel free to fork the repository and submit a pull request. You can also report issues or suggest enhancements through the GitHub issue tracker.
 
 Special thanks to:
 
@@ -276,6 +302,10 @@ Special thanks to:
 - [URL](https://primepage.de)
 - [Twitter](https://twitter.com/xaitax)
 - [LinkedIn](https://www.linkedin.com/in/alexhagenah)
+
+## 📆 Changelog
+
+- For a detailed list of updates, fixes, and new features, check the [Changelog](CHANGELOG.md).
 
 ## 📚 References
 

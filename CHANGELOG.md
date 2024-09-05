@@ -1,5 +1,12 @@
 # 📆 Changelog
 
+## [05. September 2024] - Version 0.11.0
+
+- **Method Selection Added**: Introduced a new `-m` argument to allow users to selectively run specific methods (e.g., `cisa`, `epss`, `hackerone`, `ai`, `prio`, `references`). This enables more granular control over which data sources and assessments are retrieved for each CVE.
+- **Import List Auto-Detection**: Added functionality to automatically detect and handle plain text CVE lists when using the `-i` option without specifying an import type (`-t`). If the file is detected as a plain text CVE list, it will import the CVE IDs directly without requiring a specific type.
+- **CSV Export Fix**: Fixed an issue where CISA data was not properly exported to CSV. Now, all relevant CISA information is included in the exported CSV file.
+- **HTML Export Fix**: Resolved an issue where `NoneType` errors caused the HTML export to fail. Improved error handling to ensure that missing or empty data does not interrupt the export process.
+
 ## [13. August 2024] - Version 0.10.5
 
 - **General Improvements**: Prevent IndexError by checking for non-empty lists before accessing elements.
