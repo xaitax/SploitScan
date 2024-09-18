@@ -1107,7 +1107,7 @@ def cli():
         "-i",
         "--import-file",
         type=str,
-        help="Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.",
+        help="Path to an import file. If used, CVE IDs can be omitted from the command line arguments. Expected file type is a plain text file with one CVE per line. Vulnerability scanner files can be imported also with the --type argument to specify the correct type",
     )
     parser.add_argument(
         "-c",
