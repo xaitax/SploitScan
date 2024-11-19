@@ -1005,7 +1005,8 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, config
         print("❌ No CVE IDs provided. Please provide CVE IDs or an import file.")
         return
 
-    selected_methods = methods.split(",") if methods else []
+    default_methods = ["cisa", "epss", "hackerone", "ai", "prio", "references"]
+    selected_methods = methods.split(",") if methods else default_methods
 
     for cve_id in cve_ids:
         cve_id = cve_id.upper()
