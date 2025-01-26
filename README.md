@@ -73,7 +73,7 @@ pip install -r requirements.txt
 pip install --user sploitscan
 ```
 
-### Kali/Ubuntu/Debian
+### Kali/Ubuntu/Debian (might not the latest version)
 
 ```shell
 apt install sploitscan
@@ -86,18 +86,21 @@ apt install sploitscan
 
 ### Configuration File
 
-Note: The OpenAI and VulnCheck API keys are optional. The OpenAI API key is used for AI-powered risk assessment, and the VulnCheck API key is used for VulnCheck data retrieval. If you do not intend to use these features, you can omit the configuration file or leave the API key fields blank.
+SploitScan searches for a `config.json` in multiple locations by default. It will load the first valid file it finds, in this order:
 
-Create a `config.json` file in one of the following locations with your API keys:
+1. **Custom path passed via `--config` or `-c`**  
+2. **Environment variable**: `SPLOITSCAN_CONFIG_PATH`  
+3. **Local and standard config-file locations**:  
+   - Current working directory  
+   - `~/.sploitscan/config.json`  
+   - `~/.config/sploitscan/config.json`  
+   - `~/Library/Application Support/sploitscan/config.json` (macOS)  
+   - `%APPDATA%/sploitscan/config.json` (Windows)  
+   - `/etc/sploitscan/config.json`
 
-- Current directory
-- `~/.sploitscan/`
-- `~/.config/sploitscan/`
-- `/etc/sploitscan/`
-- `~/Library/Application Support/sploitscan/` (macOS)
-- `%APPDATA%/sploitscan/` (Windows)
+> **Note**: Only one file is loaded — the first one found in the above sequence. You can place your `config.json` in any of these paths.
 
-You can also specify a custom configuration file path using the `--config` or `-c` command-line argument.
+A typical `config.json` might look like this:
 
 ```json
 {
@@ -117,7 +120,7 @@ $ sploitscan.py -h
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.11.0 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.12.0 / Alexander Hagenah / @xaitax / ah@primepage.de
 
 usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-m METHODS] [-i IMPORT_FILE] [-c CONFIG] [-d] [cve_ids ...]
 
@@ -136,7 +139,8 @@ options:
   -m METHODS, --methods METHODS
                         Specify which methods to run, separated by commas. Options: 'cisa', 'epss', 'hackerone', 'ai', 'prio', 'references', etc.
   -i IMPORT_FILE, --import-file IMPORT_FILE
-                        Path to an import file from a vulnerability scanner. If used, CVE IDs can be omitted from the command line arguments.
+                        Path to an import file. If used, CVE IDs can be omitted from the command line arguments. Expected file type is a plain text file with one CVE per line. Vulnerability scanner
+                        files can be imported also with the --type argument to specify the correct type
   -c CONFIG, --config CONFIG
                         Path to a custom config file.
   -d, --debug           Enable debug output.

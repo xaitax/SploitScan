@@ -1,5 +1,31 @@
 # 📆 Changelog
 
+## [26. January 2025] - Version 0.12.0
+
+- **CVSS Parsing Enhancements**  
+  Updated the `extract_cvss_info()` function to handle a broader range of CVSS fields: checks for CVSSv4.0, v3.1, v3.0, and v3 in that order, and then falls back to ADP entries if necessary.
+
+- **Date Parsing Unification**  
+  Introduced a new `parse_iso_date()` helper. Replaced direct `datetime.fromisoformat()` calls throughout the code with this function for consistent date formatting, including error handling for trailing Z characters.
+
+- **VulnCheck Key Handling**  
+  Improved error handling for the VulnCheck API key check—now returns a clearer error message if no VulnCheck key is configured.
+
+- **HTML Report Template Overhaul**  
+  Updated and reformatted the HTML export template for improved readability and consistency. Enhanced the layout for displaying references, exploit details, and the AI-powered risk assessment. Moved to a more standardized code style.
+
+- **Refined Public Exploits Display**  
+  Enhanced how exploit PoCs are sorted and displayed.
+
+- **Dependency Upgrades**  
+  Updated `requests` (2.32.2 → 2.32.3), `jinja2` (3.1.4 → 3.1.5), and `openai` (1.30.2 → 1.60.1) in `requirements.txt`.
+
+
+- **General Code Cleanup**  
+  - Organized imports and method parameters for clarity (e.g., specifying `params=` in all relevant requests).  
+  - Tweaked debug output for loading the configuration file, making it more verbose and consistent.  
+  - Adjusted logic for selecting public exploits to be clearer and more maintainable.
+
 ## [05. September 2024] - Version 0.11.0
 
 - **Method Selection Added**: Introduced a new `-m` argument to allow users to selectively run specific methods (e.g., `cisa`, `epss`, `hackerone`, `ai`, `prio`, `references`). This enables more granular control over which data sources and assessments are retrieved for each CVE.
