@@ -15,6 +15,8 @@ import re
 import xml.etree.ElementTree as ET
 from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
+from git import Repo, GitCommandError
+import subprocess
 
 VERSION = "0.12.0"
 
@@ -23,7 +25,9 @@ GREEN = "\033[92m"
 YELLOW = "\033[93m"
 ENDC = "\033[0m"
 
+CVE_LOCAL_DIR = str(os.path.expanduser("~/.sploitscan/cvelistV5/cves/"))
 CVE_GITHUB_URL = "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves"
+DELTA_LOG_URL = f"{CVE_GITHUB_URL}/deltaLog.json"
 EPSS_API_URL = "https://api.first.org/data/v1/epss?cve={cve_id}"
 CISA_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 NUCLEI_URL = (
@@ -46,6 +50,31 @@ PRIORITY_COLORS = {
     "D": "\033[92m",
 }
 
+
+def clone_cvelistV5_repo():
+    local_dir = os.path.expanduser('~/.sploitscan/cvelistV5/')
+    repo_url = 'https://github.com/CVEProject/cvelistV5.git'
+    if not os.path.exists(local_dir+'.git'):
+        try:
+            print(f"Cloning cvelistV5 into '{local_dir}'...")
+            Repo.clone_from(repo_url, local_dir)
+            print("cvelistV5 cloned successfully.")
+        except GitCommandError as e:
+            print(f"Error cloning cvelistV5: {e}")
+            return None
+    else:
+        try:
+            repo = Repo(local_dir)
+            if repo.bare:
+                print(f"Repository at '{local_dir}' is bare. Cannot pull updates.")
+                return None
+            print(f"Pulling updates in '{local_dir}'...")
+            repo.remotes.origin.pull()
+            print("Repository updated successfully.")
+        except GitCommandError as e:
+            print(f"Error pulling updates: {e}")
+            return None
+    return local_dir
 
 def parse_iso_date(date_string, date_format="%Y-%m-%d"):
     if not date_string:
@@ -950,13 +979,12 @@ v{VERSION} / Alexander Hagenah / @xaitax / ah@primepage.de
 """
     print(BLUE + banner + ENDC)
 
-
 def print_cve_header(cve_id):
     header = f" CVE ID: {cve_id} "
     line = "═" * len(header)
     print(f"{GREEN}╔{line}╗{ENDC}")
     print(f"{GREEN}║{header}║{ENDC}")
-    print(f"{GREEN}╚{line}╝{ENDC}\n")
+    print(f"{GREEN}╚{line}╝{ENDC}")
 
 
 def fetch_and_display_cve_data(cve_id):
@@ -996,7 +1024,7 @@ def fetch_and_display_public_exploits(cve_id):
         exploitdb_data,
         packetstorm_data,
         nuclei_data,
-        vulncheck_error,
+        vulncheck_error
     )
     return {
         "github_data": github_data,
@@ -1102,6 +1130,124 @@ def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_
     Further References: {references}
     """
 
+def grep_local_db(pattern):
+    if not os.path.exists(CVE_LOCAL_DIR):
+        print("Local CVE database not found.")
+        return None
+    try:
+        if isinstance(pattern, list):
+            pattern = '.*'.join(pattern)
+        # Execute the grep command with -i (ignore case), -r (recursive), and -l (list files) options
+        print(f"┌───[ 🕵️ {BLUE}CVE in database matches \"{pattern}\" :{ENDC} ]")
+        args = ['grep', '-irlE', str(pattern), str(CVE_LOCAL_DIR)]
+        result = subprocess.run(args, capture_output=True, text=True, check=True)
+        # Split the output by lines to get individual file paths
+        matching_files = [filename.split('/')[-1][:-5] for filename in result.stdout.splitlines()]
+        return matching_files
+    except subprocess.CalledProcessError as e:
+        # grep returns a non-zero exit code if no matches are found
+        if e.returncode == 1:
+            return None  # No matches found
+        else:
+            # Re-raise the exception for other errors
+            raise
+
+# MY ADDED
+def search_cve_by_keywords(keywords):
+    """
+    Search for CVE IDs related to specific keywords (e.g., vulnerable product name)
+    using multiple data sources.
+    """
+    cisa_url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    nuclei_url = "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/cves.json"
+
+    cve_ids = set()
+
+    # Search in local CVE database
+    local_cve_ids = grep_local_db(keywords)
+    if local_cve_ids != None:
+        cve_ids.update(local_cve_ids)
+
+    # Fetch and search CISA Known Exploited Vulnerabilities
+    try:
+        cisa_response = requests.get(cisa_url)
+        cisa_response.raise_for_status()
+        cisa_data = json.loads(cisa_response.text)
+        for item in cisa_data["vulnerabilities"]:
+            if all(key.lower() in json.dumps(item).lower() for key in keywords):
+                cve_ids.add(item["cveID"])
+    except requests.RequestException as e:
+        print(f"Error fetching data from CISA: {e}")
+
+    # Fetch and search Nuclei Templates CVE List
+    try:
+        nuclei_response = requests.get(nuclei_url)
+        nuclei_response.raise_for_status()
+        nuclei_data = []
+        for line in nuclei_response.text.split('\n'):
+            try:
+                if all(key.lower() in line.lower() for key in keywords):
+                    cve_ids.add(json.loads(line)["ID"])
+            except Exception as e:
+                pass
+    except requests.RequestException as e:
+        print(f"Error fetching data from Nuclei Templates: {e}")
+
+    if cve_ids:
+        print("\n\t", end='')
+        for cve in sorted(cve_ids):
+            print(f"{cve}, ", end='')
+        print(f"\n\n└──── Found {len(cve_ids)} CVE\n")
+    else:
+        print(f"No CVEs found for keywords '{keywords}'")
+
+    return list(cve_ids)
+
+
+def main_fast(cve_ids, export_format=None):
+    all_results = []
+    print(cve_ids)
+    for cve_id in cve_ids:
+        cve_id = cve_id.upper()
+        if not is_valid_cve_id(cve_id):
+            print(f"❌ Invalid CVE ID format: {
+                  cve_id}. Please use the format CVE-YYYY-NNNNN.")
+            continue
+
+        year = cve_id.split('-')[1]
+        hundreds = cve_id.split('-')[2][:-3] + "xxx"
+        cve_path = os.path.join(CVE_LOCAL_DIR, f"{year}/{hundreds}/{cve_id}.json")
+        
+        print_cve_header(cve_id)
+        if not os.path.exists(cve_path):
+            cve_data = fetch_and_display_cve_data(cve_id)
+        else:
+            with open(cve_path, "r") as file:
+                cve_data = file.read()
+                display_cve_data(json.loads(cve_data))
+
+        cve_result = {
+            "CVE Data": cve_data,
+            "EPSS Data": None,
+            "CISA Data": {"cisa_status": "N/A", "ransomware_use": "N/A"},
+            "Nuclei Data": None,
+            "GitHub Data": None,
+            "VulnCheck Data": None,
+            "ExploitDB Data": None,
+            "PacketStorm Data": None,
+            "HackerOne Data": None,
+            "Priority": {"Priority": 0},
+            "Risk Assessment": None,
+        }
+        all_results.append(cve_result)
+
+    if export_format == "json":
+        export_to_json(all_results, cve_ids)
+    elif export_format == "csv":
+        export_to_csv(all_results, cve_ids)
+    elif export_format == "html":
+        export_to_html(all_results, cve_ids)
+    
 
 def main(cve_ids, export_format=None, import_file=None, import_type=None, config_path=None, methods=None, debug=False):
     global config
@@ -1248,11 +1394,46 @@ def cli():
     )
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Enable debug output.")
+    parser.add_argument("-s", "--silent", action="store_true",
+                        help="Enable silent output. It doesn't print the CVEs details.")
 
+    # MY ADDED
+    parser.add_argument(
+        "-k", "--keywords",
+        type=str,
+        nargs='+',
+        help="Search for CVEs related to a specific keyword (e.g., product name)."
+    )
+    parser.add_argument(
+        "-local", "--local-database", dest='local_database',
+        action='store_true',
+        help="Download cvelistV5 repository into '~/.sploitscan/cvelistV5/'. When the local database is detected on the user machine, sploitscan will prefer to use it over online research. It enhance the keyword search but it's slower."
+    )
+    parser.add_argument(
+        "-f", "--fast-mode", dest='fast_mode',
+        action='store_true',
+        help="Only display the CVE informations, no exploits or other ressource fetching."
+    )
     args = parser.parse_args()
-    main(args.cve_ids, args.export, args.import_file,
-         args.type, args.config, args.methods, args.debug)
 
+    # download the github cvelistV5 database in "~/.sploitscan/cvelistV5/" if it is asked by user
+    if args.local_database:
+        clone_cvelistV5_repo()
+
+    if args.keywords:
+        cve_ids = search_cve_by_keywords(args.keywords)
+        if not cve_ids:
+            sys.exit(1)
+        if args.fast_mode:
+            main_fast(cve_ids, args.export)
+        elif not args.silent:
+            main(cve_ids, args.export, args.import_file, args.type, args.config, args.methods, args.debug)
+    else:
+        if args.fast_mode:
+            main_fast(args.cve_ids, args.export)
+        elif not args.silent:
+            main(args.cve_ids, args.export, args.import_file, args.type, args.config, args.methods, args.debug)
 
 if __name__ == "__main__":
     cli()
+
