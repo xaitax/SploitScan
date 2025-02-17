@@ -1223,8 +1223,8 @@ def main_fast(cve_ids, export_format=None):
             cve_data = fetch_and_display_cve_data(cve_id)
         else:
             with open(cve_path, "r") as file:
-                cve_data = file.read()
-                display_cve_data(json.loads(cve_data))
+                cve_data = json.loads(file.read())
+                display_cve_data(cve_data)
 
         cve_result = {
             "CVE Data": cve_data,
