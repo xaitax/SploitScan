@@ -14,7 +14,9 @@ import csv
 import re
 import xml.etree.ElementTree as ET
 from openai import OpenAI
+import google.generativeai as genai
 from jinja2 import Environment, FileSystemLoader
+
 
 VERSION = "0.12.0"
 
@@ -539,7 +541,8 @@ def load_config(config_path=None, debug=False):
 
     default_config = {
         "vulncheck_api_key": None,
-        "openai_api_key": None
+        "openai_api_key": None,
+        "google_ai_api_key": None
     }
 
     def debug_print(msg):
@@ -582,59 +585,129 @@ def load_config(config_path=None, debug=False):
     print("⚠️ Config file not found in any checked locations, using default settings.")
     return default_config
 
+import google.generativeai as genai
+
 def get_risk_assessment(cve_details, cve_data):
-    api_key = config.get("openai_api_key")
-    if not api_key:
-        return "❌ OpenAI API key is not configured correctly."
+    results = []
+    openai_api_key = config.get("openai_api_key")
+    google_ai_api_key = config.get("google_ai_api_key")
 
-    client = OpenAI(api_key=api_key)
+    # OpenAI API Request
+    if openai_api_key:
+        client = OpenAI(api_key=openai_api_key)
+        try:
+            prompt = f"""
+            You are a security analyst. Provide exactly four sections of output, labeled with numeric headers:
 
-    prompt = f"""
-    You are a security analyst. Provide exactly four sections of output, labeled with numeric headers:
+            1. Risk Assessment
+            Provide a detailed risk assessment including the nature of the vulnerability & its business impact. 
+            Describe the likelihood and ease of exploitation, and potential impacts on confidentiality, integrity, 
+            and availability.
 
-    1. Risk Assessment
-    Provide a detailed risk assessment including the nature of the vulnerability & its business impact. 
-    Describe the likelihood and ease of exploitation, and potential impacts on confidentiality, integrity, 
-    and availability.
+            2. Potential Attack Scenarios
+            Describe at least one potential attack scenario that leverages this vulnerability. It should include a 
+            detailed description of the attack vector, the process, and the potential outcomes.
 
-    2. Potential Attack Scenarios
-    Describe at least one potential attack scenario that leverages this vulnerability. It should include a 
-    detailed description of the attack vector, the process, and the potential outcomes.
+            3. Mitigation Recommendations
+            Provide specific, actionable mitigation recommendations. Include immediate actions such as patching. 
+            Provide links to relevant resources where applicable.
 
-    3. Mitigation Recommendations
-    Provide specific, actionable mitigation recommendations. Include immediate actions such as patching. 
-    Provide links to relevant resources where applicable.
+            4. Executive Summary
+            Summarize the vulnerability, potential impacts, and importance of taking action. Highlight key points 
+            from the risk assessment, attack scenarios, and mitigation recommendations. This summary should be 
+            understandable to non-technical stakeholders, focusing on business impact and urgency.
 
-    4. Executive Summary
-    Summarize the vulnerability, potential impacts, and importance of taking action. Highlight key points 
-    from the risk assessment, attack scenarios, and mitigation recommendations. This summary should be 
-    understandable to non-technical stakeholders, focusing on business impact and urgency.
+            IMPORTANT: 
+            - Output only plain text, with no bullet points, dashes, or Markdown formatting.
+            - Each heading must be on its own line. 
+            - If text spans multiple paragraphs, just separate them by a blank line. 
+            - No other decorative characters or lists.
 
-    IMPORTANT: 
-    - Output only plain text, with no bullet points, dashes, or Markdown formatting.
-    - Each heading must be on its own line. 
-    - If text spans multiple paragraphs, just separate them by a blank line. 
-    - No other decorative characters or lists.
+            CVE DETAILS:
+            {cve_details}
 
-    CVE DETAILS:
-    {cve_details}
+            FULL CVE DATA:
+            {json.dumps(cve_data, indent=4)}
+            """
 
-    FULL CVE DATA:
-    {json.dumps(cve_data, indent=4)}
-    """
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "system", "content": "You are a security analyst."},
+                          {"role": "user", "content": prompt}],
+                timeout=30  # Increased timeout for reliability
+            )
+            result = response.choices[0].message.content.strip()
+            results.append(f"OpenAI:\n{result}")
+        except Exception as e:
+            results.append(f"OpenAI: Error fetching data: {e}")
 
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a security analyst."},
-                {"role": "user", "content": prompt},
-            ],
-        )
-        result = response.choices[0].message.content.strip()
-        return result
-    except Exception as e:
-        return f"❌ Error fetching data from OpenAI: {e}"
+    # Google AI (Gemini API) Request with timeout handling
+    if google_ai_api_key:
+        import google.generativeai as genai
+        
+        # Configure in a way that's compatible with older versions
+        genai.configure(api_key=google_ai_api_key)
+        
+        for attempt in range(3):  # Retry up to 3 times if timeout occurs
+            try:
+                prompt = f"""
+                You are a security analyst. Provide exactly four sections of output, labeled with numeric headers:
+
+                1. Risk Assessment
+                Provide a detailed risk assessment including the nature of the vulnerability & its business impact. 
+                Describe the likelihood and ease of exploitation, and potential impacts on confidentiality, integrity, 
+                and availability.
+
+                2. Potential Attack Scenarios
+                Describe at least one potential attack scenario that leverages this vulnerability. It should include a 
+                detailed description of the attack vector, the process, and the potential outcomes.
+
+                3. Mitigation Recommendations
+                Provide specific, actionable mitigation recommendations. Include immediate actions such as patching. 
+                Provide links to relevant resources where applicable.
+
+                4. Executive Summary
+                Summarize the vulnerability, potential impacts, and importance of taking action. Highlight key points 
+                from the risk assessment, attack scenarios, and mitigation recommendations. This summary should be 
+                understandable to non-technical stakeholders, focusing on business impact and urgency.
+
+                CVE DETAILS:
+                {cve_details}
+
+                FULL CVE DATA:
+                {json.dumps(cve_data, indent=4)}
+                """
+                
+                # Simple approach without context manager
+                model = genai.GenerativeModel("gemini-1.5-flash")
+                response = model.generate_content(prompt)
+                
+                if hasattr(response, "text"):
+                    results.append(f"Google AI:\n{response.text.strip()}")
+                else:
+                    results.append("Google AI: AI analysis failed.")
+                
+                # Try manual cleanup to avoid hanging
+                del model
+                import gc
+                gc.collect()
+                
+                break  # Exit retry loop if successful
+                
+            except Exception as e:
+                if attempt < 2:
+                    print(f"⚠️ Google AI Timeout (Attempt {attempt+1}/3), retrying...")
+                    time.sleep(5)  # Wait before retrying
+                else:
+                    results.append(f"Google AI: Error fetching data: {e}")
+                    break  # Stop retrying if max attempts reached
+    
+    # If neither API key works
+    if not results:
+        return "❌ No AI API keys are configured or both services failed."
+
+    return "\n\n".join(results)
+
 
 def display_ai_risk_assessment(cve_details, cve_data):
     def spinner_animation(message):
@@ -648,7 +721,10 @@ def display_ai_risk_assessment(cve_details, cve_data):
 
     def get_risk_assessment_thread():
         nonlocal assessment
-        assessment = get_risk_assessment(cve_details, cve_data)
+        try:
+            assessment = get_risk_assessment(cve_details, cve_data)
+        except Exception as e:
+            assessment = f"❌ Error fetching AI response: {e}"
         global stop_spinner
         stop_spinner = True
 
@@ -660,7 +736,7 @@ def display_ai_risk_assessment(cve_details, cve_data):
     print("|")
 
     spinner_thread = threading.Thread(
-        target=spinner_animation, args=("| Loading OpenAI risk assessment... ",)
+        target=spinner_animation, args=("| Loading AI risk assessment... ",)
     )
     spinner_thread.start()
 
@@ -671,26 +747,47 @@ def display_ai_risk_assessment(cve_details, cve_data):
     spinner_thread.join()
 
     print("|")
+
     if assessment:
-        sections = assessment.split("\n\n")
-        for section in sections:
-            section = section.strip()
-            if section:
-                if section.startswith(("1. ", "2. ", "3. ", "4. ")):
-                    header = section.split("\n")[0].strip()
-                    print(f"| {header}")
-                    print("| " + "-" * (len(header) + 1))
-                    content = "\n".join(section.split("\n")[1:]).strip()
-                    wrapped_content = textwrap.fill(
-                        content, width=100, initial_indent="| ", subsequent_indent="| "
-                    )
-                    print(wrapped_content)
-                else:
-                    wrapped_content = textwrap.fill(
-                        section, width=100, initial_indent="| ", subsequent_indent="| "
-                    )
-                    print(wrapped_content)
-                print("|")
+        assessments = assessment.strip().split("\n\n")
+
+        for full_assessment in assessments:
+            # Ensure there is a ":" to prevent errors
+            if ":" in full_assessment:
+                source, content = full_assessment.split(":", 1)
+                source = source.strip()
+                content = content.strip()
+            else:
+                source = "AI Response"
+                content = full_assessment.strip()
+
+            print(f"| {source}:")
+            print("| " + "-" * (len(source) + 1))
+
+            # Fix formatting issues
+            content = re.sub(r"\*\*(.*?)\*\*", r"\1", content)  # Remove bold markers
+            content = re.sub(r"(\w+):\n", r"\1:\n|   ", content)  # Ensure headers format correctly
+            content = content.replace("* ", "- ")  # Replace bullet points with dashes
+
+            sections = content.split("\n\n")
+            for section in sections:
+                section = section.strip()
+                if section:
+                    if section.startswith(("1. ", "2. ", "3. ", "4. ")):
+                        header = section.split("\n")[0].strip()
+                        print(f"|   {header}")
+                        print("|   " + "-" * (len(header) + 1))
+                        content_body = "\n".join(section.split("\n")[1:]).strip()
+                        wrapped_content = textwrap.fill(
+                            content_body, width=100, initial_indent="|   ", subsequent_indent="|   "
+                        )
+                        print(wrapped_content)
+                    else:
+                        wrapped_content = textwrap.fill(
+                            section, width=100, initial_indent="|   ", subsequent_indent="|   "
+                        )
+                        print(wrapped_content)
+                    print("|")
     else:
         print("| ❌ No AI Risk Assessment could be retrieved.")
         print("|")
@@ -748,7 +845,8 @@ def parse_nessus_file(file):
     tree = ET.parse(file)
     root = tree.getroot()
     return [
-        cve.text.strip().upper()
+        cve.text.strip().upper
+()
         for report_item in root.findall(".//ReportItem")
         for cve in report_item.findall("cve")
         if is_valid_cve_id(cve.text.strip().upper())
