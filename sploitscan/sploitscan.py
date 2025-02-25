@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import requests
 import argparse
@@ -13,10 +14,15 @@ import os
 import csv
 import re
 import xml.etree.ElementTree as ET
+import subprocess
+import concurrent.futures
+from tqdm import tqdm
+from git import Repo, GitCommandError, RemoteProgress
+from google import genai
 from openai import OpenAI
 from jinja2 import Environment, FileSystemLoader
 
-VERSION = "0.12.0"
+VERSION = "0.13.0"
 
 BLUE = "\033[94m"
 GREEN = "\033[92m"
@@ -47,6 +53,19 @@ PRIORITY_COLORS = {
 }
 
 
+def get_cve_repo_dir():
+    try:
+        base_dir = config.get("local_database_dir",
+                              os.path.expanduser("~/.sploitscan"))
+    except NameError:
+        base_dir = os.path.expanduser("~/.sploitscan")
+    return os.path.join(base_dir, "cvelistV5")
+
+
+def get_cve_local_dir():
+    return os.path.join(get_cve_repo_dir(), "cves")
+
+
 def parse_iso_date(date_string, date_format="%Y-%m-%d"):
     if not date_string:
         return ""
@@ -54,6 +73,132 @@ def parse_iso_date(date_string, date_format="%Y-%m-%d"):
         return datetime.datetime.fromisoformat(date_string.rstrip("Z")).strftime(date_format)
     except ValueError:
         return date_string
+
+
+class CloneProgress(RemoteProgress):
+    def update(self, op_code, cur_count, max_count=None, message=''):
+        if max_count:
+            percent = (cur_count / max_count) * 100
+            print(f"🔄 Progress: {percent:.2f}% - {message}", end='\r')
+        else:
+            print(f"🔄 {message}", end='\r')
+
+
+def clone_cvelistV5_repo():
+    local_dir = get_cve_repo_dir()
+    repo_url = 'https://github.com/CVEProject/cvelistV5.git'
+
+    if not os.path.exists(os.path.join(local_dir, '.git')):
+        try:
+            print(f"📥 Cloning CVE List V5 into '{local_dir}'.")
+            print(
+                "⚠️ Warning: The repository is several GB in size and the download may take a while.")
+            Repo.clone_from(repo_url, local_dir, progress=CloneProgress())
+            print("\n✅ CVE List V5 cloned successfully.")
+        except GitCommandError as e:
+            print(f"❌ Error cloning cvelistV5: {e}")
+            return None
+    else:
+        try:
+            repo = Repo(local_dir)
+            if repo.bare:
+                print(
+                    f"❌ Repository at '{local_dir}' is bare. Cannot pull updates.")
+                return None
+            print(f"📥 Pulling updates in '{local_dir}'...")
+            repo.remotes.origin.pull()
+            print("✅ Repository updated successfully.")
+        except GitCommandError as e:
+            print(f"❌ Error pulling updates: {e}")
+            return None
+    return local_dir
+
+
+def grep_local_db(keywords):
+    local_dir = get_cve_local_dir()
+    if not os.path.exists(local_dir):
+        print("Local CVE database not found.")
+        return None
+
+    if isinstance(keywords, str):
+        keywords = [keywords.lower()]
+    else:
+        keywords = [kw.lower() for kw in keywords]
+
+    print(
+        f"┌───[ 🕵️ Searching local database for keywords: {', '.join(keywords)} ]")
+
+    json_files = []
+    for root, _, files in os.walk(local_dir):
+        for filename in files:
+            if filename.endswith('.json'):
+                json_files.append(os.path.join(root, filename))
+
+    def process_file(file_path):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read().lower()
+                if all(kw in content for kw in keywords):
+                    return os.path.splitext(os.path.basename(file_path))[0]
+        except Exception as e:
+            print(f"Error reading file {file_path}: {e}")
+        return None
+
+    matching_files = []
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        for result in tqdm(executor.map(process_file, json_files),
+                           total=len(json_files),
+                           desc="Processing CVE files"):
+            if result is not None:
+                matching_files.append(result)
+
+    return matching_files if matching_files else None
+
+
+def search_cve_by_keywords(keywords):
+    cve_ids = set()
+
+    local_cve_ids = grep_local_db(keywords)
+    if local_cve_ids:
+        cve_ids.update(local_cve_ids)
+
+    try:
+        cisa_response = requests.get(CISA_URL)
+        cisa_response.raise_for_status()
+        cisa_data = cisa_response.json()
+        for item in cisa_data.get("vulnerabilities", []):
+            item_str = json.dumps(item).lower()
+            if all(kw in item_str for kw in [k.lower() for k in keywords]):
+                cve_ids.add(item["cveID"])
+    except requests.RequestException as e:
+        print(f"Error fetching data from CISA: {e}")
+
+    try:
+        nuclei_response = requests.get(NUCLEI_URL)
+        nuclei_response.raise_for_status()
+        for line in nuclei_response.text.splitlines():
+            try:
+                line_lower = line.lower()
+                if all(kw in line_lower for kw in [k.lower() for k in keywords]):
+                    template = json.loads(line)
+                    cve_ids.add(template["ID"])
+            except Exception:
+                pass
+    except requests.RequestException as e:
+        print(f"Error fetching data from Nuclei Templates: {e}")
+
+    if cve_ids:
+        header = f" Found {len(cve_ids)} CVE(s) matching: {' '.join(keywords)} "
+        line = "═" * len(header)
+        print(f"\n╔{line}╗")
+        print(f"║{header}║")
+        print(f"╚{line}╝\n")
+        print(", ".join(sorted(cve_ids)))
+        print()
+    else:
+        print(f"No CVEs found for keywords '{' '.join(keywords)}'")
+
+    return list(cve_ids)
 
 
 def extract_cvss_info(cve_data):
@@ -96,6 +241,7 @@ def extract_cvss_info(cve_data):
                 break
 
     return str(base_score), str(base_severity), str(vector)
+
 
 def fetch_data(url, params=None, headers=None):
     try:
@@ -151,7 +297,8 @@ def fetch_nuclei_data(cve_id):
     except json.JSONDecodeError as e:
         return None, f"❌ Error parsing JSON data from {NUCLEI_URL}: {e}"
     return None, None
-    
+
+
 def fetch_vulncheck_data(cve_id):
     vulncheck_api_key = config.get("vulncheck_api_key")
     if not vulncheck_api_key:
@@ -162,7 +309,8 @@ def fetch_vulncheck_data(cve_id):
         "authorization": f"Bearer {vulncheck_api_key}",
     }
 
-    response = fetch_data(VULNCHECK_API_URL, params={"cve": cve_id}, headers=headers)
+    response = fetch_data(VULNCHECK_API_URL, params={
+                          "cve": cve_id}, headers=headers)
     if isinstance(response, str):
         return None, response
 
@@ -171,6 +319,7 @@ def fetch_vulncheck_data(cve_id):
         return json_data, None
     except json.JSONDecodeError as e:
         return None, f"Error parsing JSON data from VulnCheck: {e}"
+
 
 def fetch_exploitdb_data(cve_id):
     response = fetch_data(EXPLOITDB_URL)
@@ -527,6 +676,7 @@ def display_priority_rating(cve_id, priority):
         display_data("⚠️ Patching Priority Rating", {
                      "priority": priority}, template)
 
+
 def load_config(config_path=None, debug=False):
     """
     Attempts to load a JSON config file in this order:
@@ -556,10 +706,12 @@ def load_config(config_path=None, debug=False):
         candidate_paths.append(env_path)
 
     candidate_paths.extend([
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json"),
+        os.path.join(os.path.dirname(
+            os.path.abspath(__file__)), "config.json"),
         os.path.expanduser("~/.sploitscan/config.json"),
         os.path.expanduser("~/.config/sploitscan/config.json"),
-        os.path.expanduser("~/Library/Application Support/sploitscan/config.json"),
+        os.path.expanduser(
+            "~/Library/Application Support/sploitscan/config.json"),
         os.path.join(os.getenv("APPDATA", ""), "sploitscan", "config.json"),
         "/etc/sploitscan/config.json"
     ])
@@ -582,61 +734,153 @@ def load_config(config_path=None, debug=False):
     print("⚠️ Config file not found in any checked locations, using default settings.")
     return default_config
 
-def get_risk_assessment(cve_details, cve_data):
-    api_key = config.get("openai_api_key")
-    if not api_key:
+
+def get_openai_risk_assessment(prompt):
+    openai_api_key = config.get("openai_api_key")
+    if not openai_api_key:
         return "❌ OpenAI API key is not configured correctly."
-
-    client = OpenAI(api_key=api_key)
-
-    prompt = f"""
-    You are a security analyst. Provide exactly four sections of output, labeled with numeric headers:
-
-    1. Risk Assessment
-    Provide a detailed risk assessment including the nature of the vulnerability & its business impact. 
-    Describe the likelihood and ease of exploitation, and potential impacts on confidentiality, integrity, 
-    and availability.
-
-    2. Potential Attack Scenarios
-    Describe at least one potential attack scenario that leverages this vulnerability. It should include a 
-    detailed description of the attack vector, the process, and the potential outcomes.
-
-    3. Mitigation Recommendations
-    Provide specific, actionable mitigation recommendations. Include immediate actions such as patching. 
-    Provide links to relevant resources where applicable.
-
-    4. Executive Summary
-    Summarize the vulnerability, potential impacts, and importance of taking action. Highlight key points 
-    from the risk assessment, attack scenarios, and mitigation recommendations. This summary should be 
-    understandable to non-technical stakeholders, focusing on business impact and urgency.
-
-    IMPORTANT: 
-    - Output only plain text, with no bullet points, dashes, or Markdown formatting.
-    - Each heading must be on its own line. 
-    - If text spans multiple paragraphs, just separate them by a blank line. 
-    - No other decorative characters or lists.
-
-    CVE DETAILS:
-    {cve_details}
-
-    FULL CVE DATA:
-    {json.dumps(cve_data, indent=4)}
-    """
-
+    client = OpenAI(api_key=openai_api_key)
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a security analyst."},
-                {"role": "user", "content": prompt},
+                {"role": "user", "content": prompt}
             ],
+            timeout=30
         )
-        result = response.choices[0].message.content.strip()
-        return result
+        return response.choices[0].message.content.strip()
     except Exception as e:
         return f"❌ Error fetching data from OpenAI: {e}"
 
-def display_ai_risk_assessment(cve_details, cve_data):
+
+def get_google_risk_assessment(prompt):
+    google_api_key = config.get("google_ai_api_key")
+    if not google_api_key:
+        return "❌ Google AI API key is not configured correctly."
+    client = genai.Client(api_key=google_api_key)
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=[prompt]
+            )
+            if hasattr(response, "text"):
+                return response.text.strip()
+            else:
+                return "Google AI: AI analysis failed."
+        except Exception as e:
+            if attempt < 2:
+                print(
+                    f"⚠️ Google AI Timeout (Attempt {attempt+1}/3), retrying...")
+                time.sleep(5)
+            else:
+                return f"❌ Error fetching data from Google AI: {e}"
+
+
+def get_grok_risk_assessment(prompt):
+    grok_api_key = config.get("grok_api_key")
+    if not grok_api_key:
+        return "❌ Grok AI API key is not configured correctly."
+    try:
+        client = OpenAI(
+            api_key=grok_api_key,
+            base_url="https://api.x.ai/v1",
+        )
+        response = client.chat.completions.create(
+            model="grok-2-latest",
+            messages=[
+                {"role": "system", "content": "You are a security analyst."},
+                {"role": "user", "content": prompt}
+            ],
+            timeout=30
+        )
+        if response.choices and len(response.choices) > 0:
+            message = response.choices[0].message
+            if hasattr(message, "content"):
+                return message.content.strip()
+            else:
+                return str(message)
+        else:
+            return "Grok AI: No response received."
+    except Exception as e:
+        return f"❌ Error fetching data from Grok AI: {e}"
+
+
+def get_deepseek_risk_assessment(prompt):
+    deepseek_api_key = config.get("deepseek_api_key")
+    if not deepseek_api_key:
+        return "❌ DeepSeek API key is not configured correctly."
+    try:
+        client = OpenAI(api_key=deepseek_api_key,
+                        base_url="https://api.deepseek.com")
+        response = client.chat.completions.create(
+            model="deepseek-chat",
+            messages=[
+                {"role": "system", "content": "You are a security analyst."},
+                {"role": "user", "content": prompt}
+            ],
+            timeout=30,
+            stream=False
+        )
+        if response.choices and len(response.choices) > 0:
+            message = response.choices[0].message
+            if hasattr(message, "content"):
+                return message.content.strip()
+            else:
+                return str(message)
+        else:
+            return "DeepSeek: No response received."
+    except Exception as e:
+        return f"❌ Error fetching data from DeepSeek: {e}"
+
+
+def generate_ai_prompt(cve_details, cve_data):
+    prompt = f"""
+You are a security analyst. Provide exactly four sections of output, labeled with numeric headers:
+1. Risk Assessment
+Provide a detailed risk assessment including the nature of the vulnerability & its business impact.
+Describe the likelihood and ease of exploitation, and potential impacts on confidentiality, integrity, and availability.
+
+2. Potential Attack Scenarios
+Describe at least one potential attack scenario that leverages this vulnerability. Include a detailed description of the attack vector, process, and potential outcomes.
+
+3. Mitigation Recommendations
+Provide specific, actionable mitigation recommendations. Include immediate actions such as patching, and provide links to relevant resources where applicable.
+
+4. Executive Summary
+Summarize the vulnerability, potential impacts, and importance of taking action in language understandable by non-technical stakeholders.
+
+IMPORTANT:
+- Output only plain text with no bullet points, dashes, or Markdown formatting.
+- Each heading must be on its own line.
+- If text spans multiple paragraphs, separate them by a blank line.
+- No other decorative characters or lists.
+
+CVE DETAILS:
+{cve_details}
+
+FULL CVE DATA:
+{json.dumps(cve_data, indent=4)}
+"""
+    return prompt
+
+
+def get_risk_assessment(ai_provider, cve_details, cve_data):
+    prompt = generate_ai_prompt(cve_details, cve_data)
+    if ai_provider == "openai":
+        return get_openai_risk_assessment(prompt)
+    elif ai_provider == "google":
+        return get_google_risk_assessment(prompt)
+    elif ai_provider == "grok":
+        return get_grok_risk_assessment(prompt)
+    elif ai_provider == "deepseek":
+        return get_deepseek_risk_assessment(prompt)
+    else:
+        return "❌ Unknown AI provider selected."
+
+
+def display_ai_risk_assessment(cve_details, cve_data, ai_provider):
     def spinner_animation(message):
         spinner = itertools.cycle(["|", "/", "-", "\\"])
         while not stop_spinner:
@@ -648,7 +892,11 @@ def display_ai_risk_assessment(cve_details, cve_data):
 
     def get_risk_assessment_thread():
         nonlocal assessment
-        assessment = get_risk_assessment(cve_details, cve_data)
+        try:
+            assessment = get_risk_assessment(
+                ai_provider, cve_details, cve_data)
+        except Exception as e:
+            assessment = f"❌ Error fetching AI response: {e}"
         global stop_spinner
         stop_spinner = True
 
@@ -658,15 +906,13 @@ def display_ai_risk_assessment(cve_details, cve_data):
 
     print("┌───[ 🤖 AI-Powered Risk Assessment ]")
     print("|")
-
     spinner_thread = threading.Thread(
-        target=spinner_animation, args=("| Loading OpenAI risk assessment... ",)
+        target=spinner_animation,
+        args=(f"| Loading {ai_provider} risk assessment...",)
     )
     spinner_thread.start()
-
     assessment_thread = threading.Thread(target=get_risk_assessment_thread)
     assessment_thread.start()
-
     assessment_thread.join()
     spinner_thread.join()
 
@@ -1103,7 +1349,8 @@ def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_
     """
 
 
-def main(cve_ids, export_format=None, import_file=None, import_type=None, config_path=None, methods=None, debug=False):
+def main(cve_ids, export_format=None, import_file=None, import_type=None, ai_provider=None,
+         config_path=None, methods=None, debug=False, fast_mode=False):
     global config
     config = load_config(config_path=config_path,
                          debug=debug) if config_path else load_config(debug=debug)
@@ -1112,12 +1359,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, config
     if export_format:
         export_format = export_format.lower()
 
-    if import_file and not import_type:
-        cve_ids = import_vulnerability_data(import_file)
-        if not cve_ids:
-            print("❌ No valid CVE IDs found in the provided file.")
-            return
-    elif import_file and import_type:
+    if import_file:
         cve_ids = import_vulnerability_data(import_file, import_type)
         if not cve_ids:
             print("❌ No valid CVE IDs found in the provided file.")
@@ -1133,66 +1375,78 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, config
     for cve_id in cve_ids:
         cve_id = cve_id.upper()
         if not is_valid_cve_id(cve_id):
-            print(f"❌ Invalid CVE ID format: {
-                  cve_id}. Please use the format CVE-YYYY-NNNNN.")
+            print(
+                f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN.")
             continue
 
         print_cve_header(cve_id)
-        cve_data = fetch_and_display_cve_data(cve_id)
-        if not cve_data:
-            continue
 
-        public_exploits = fetch_and_display_public_exploits(cve_id)
+        if fast_mode:
+            parts = cve_id.split('-')
+            year = parts[1]
+            hundreds = parts[2][:-3] + "xxx"
+            cve_path = os.path.join(
+                get_cve_local_dir(), year, hundreds, f"{cve_id}.json")
+            if os.path.exists(cve_path):
+                try:
+                    with open(cve_path, "r", encoding="utf-8") as file:
+                        cve_data = json.load(file)
+                    display_cve_data(cve_data)
+                except Exception as e:
+                    print(f"Error reading local CVE file {cve_path}: {e}")
+                    continue
+            else:
+                cve_data = fetch_and_display_cve_data(cve_id)
+        else:
+            cve_data = fetch_and_display_cve_data(cve_id)
+            if not cve_data:
+                continue
 
-        epss_data = None
-        relevant_cisa_data = None
-        hackerone_data = None
-        priority = None
-        risk_assessment = None
+            public_exploits = fetch_and_display_public_exploits(cve_id)
+            epss_data = fetch_and_display_epss_score(
+                cve_id) if "epss" in selected_methods else None
+            relevant_cisa_data = fetch_and_display_cisa_status(
+                cve_id) if "cisa" in selected_methods else None
+            hackerone_data = fetch_and_display_hackerone_data(
+                cve_id) if "hackerone" in selected_methods else None
 
-        if "epss" in selected_methods:
-            epss_data = fetch_and_display_epss_score(cve_id)
+            risk_assessment = None
+            if "ai" in selected_methods:
+                cve_details = compile_cve_details(
+                    cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits)
+                risk_assessment = get_risk_assessment(
+                    ai_provider, cve_details, cve_data)
+                display_ai_risk_assessment(cve_details, cve_data, ai_provider)
 
-        if "cisa" in selected_methods:
-            relevant_cisa_data = fetch_and_display_cisa_status(cve_id)
+            priority = None
+            if "prio" in selected_methods:
+                priority = calculate_priority(
+                    cve_id,
+                    cve_data,
+                    epss_data,
+                    public_exploits.get("github_data"),
+                    relevant_cisa_data,
+                    public_exploits.get("vulncheck_data"),
+                    public_exploits.get("exploitdb_data"),
+                )
+                display_priority_rating(cve_id, priority)
 
-        if "hackerone" in selected_methods:
-            hackerone_data = fetch_and_display_hackerone_data(cve_id)
-
-        if "ai" in selected_methods:
-            cve_details = compile_cve_details(
-                cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits
-            )
-            risk_assessment = get_risk_assessment(cve_details, cve_data)
-            display_ai_risk_assessment(cve_details, cve_data)
-
-        if "prio" in selected_methods:
-            priority = calculate_priority(
-                cve_id,
-                cve_data,
-                epss_data,
-                public_exploits["github_data"],
-                relevant_cisa_data,
-                public_exploits["vulncheck_data"],
-                public_exploits["exploitdb_data"],
-            )
-            display_priority_rating(cve_id, priority)
-
-        if "references" in selected_methods:
-            display_cve_references(cve_data)
+            if "references" in selected_methods:
+                display_cve_references(cve_data)
 
         cve_result = {
             "CVE Data": cve_data,
-            "EPSS Data": epss_data,
-            "CISA Data": relevant_cisa_data or {"cisa_status": "N/A", "ransomware_use": "N/A"},
-            "Nuclei Data": public_exploits["nuclei_data"],
-            "GitHub Data": public_exploits["github_data"],
-            "VulnCheck Data": public_exploits["vulncheck_data"],
-            "ExploitDB Data": public_exploits["exploitdb_data"],
-            "PacketStorm Data": public_exploits["packetstorm_data"],
-            "HackerOne Data": hackerone_data,
-            "Priority": {"Priority": priority},
-            "Risk Assessment": risk_assessment,
+            "EPSS Data": None if fast_mode else epss_data,
+            "CISA Data": {"cisa_status": "N/A", "ransomware_use": "N/A"} if fast_mode
+            else (relevant_cisa_data or {"cisa_status": "N/A", "ransomware_use": "N/A"}),
+            "Nuclei Data": None if fast_mode else public_exploits.get("nuclei_data"),
+            "GitHub Data": None if fast_mode else public_exploits.get("github_data"),
+            "VulnCheck Data": None if fast_mode else public_exploits.get("vulncheck_data"),
+            "ExploitDB Data": None if fast_mode else public_exploits.get("exploitdb_data"),
+            "PacketStorm Data": None if fast_mode else public_exploits.get("packetstorm_data"),
+            "HackerOne Data": None if fast_mode else hackerone_data,
+            "Priority": {"Priority": 0} if fast_mode else {"Priority": priority},
+            "Risk Assessment": None if fast_mode else risk_assessment,
         }
         all_results.append(cve_result)
 
@@ -1207,51 +1461,52 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, config
 def cli():
     display_banner()
     parser = argparse.ArgumentParser(
-        description="SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s)."
+        description="SploitScan: Retrieve and display vulnerability and exploit data for specified CVE ID(s)."
     )
-    parser.add_argument(
-        "cve_ids",
-        type=str,
-        nargs="*",
-        default=[],
-        help="Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE-YYYY-NNNNN. This argument is optional if an import file is provided using the -i option.",
-    )
-    parser.add_argument(
-        "-e",
-        "--export",
-        choices=["json", "JSON", "csv", "CSV", "html", "HTML"],
-        help="Optional: Export the results to a JSON, CSV, or HTML file. Specify the format: 'json', 'csv', or 'html'.",
-    )
-    parser.add_argument(
-        "-t",
-        "--type",
-        choices=["nessus", "nexpose", "openvas", "docker"],
-        help="Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.",
-    )
-    parser.add_argument(
-        "-m",
-        "--methods",
-        type=str,
-        help="Specify which methods to run, separated by commas. Options: 'cisa', 'epss', 'hackerone', 'ai', 'prio', 'references', etc.",
-    )
-    parser.add_argument(
-        "-i",
-        "--import-file",
-        type=str,
-        help="Path to an import file. If used, CVE IDs can be omitted from the command line arguments. Expected file type is a plain text file with one CVE per line. Vulnerability scanner files can be imported also with the --type argument to specify the correct type",
-    )
-    parser.add_argument(
-        "-c",
-        "--config",
-        type=str,
-        help="Path to a custom config file.",
-    )
+    parser.add_argument("cve_ids", type=str, nargs="*", default=[],
+                        help="Enter one or more CVE IDs (e.g., CVE-YYYY-NNNNN). This is optional if an import file is provided via -i.")
+    parser.add_argument("-e", "--export", choices=["json", "csv", "html"],
+                        help="Export the results in the specified format ('json', 'csv', or 'html').")
+    parser.add_argument("-t", "--type", choices=["nessus", "nexpose", "openvas", "docker"],
+                        help="Specify the type of the import file ('nessus', 'nexpose', 'openvas', or 'docker').")
+    parser.add_argument("--ai", type=str, choices=["openai", "google", "grok", "deepseek"],
+                        help="Select the AI provider for risk assessment (e.g., 'openai', 'google', 'grok', or 'deepseek').")
+    parser.add_argument("-k", "--keywords", type=str, nargs='+',
+                        help="Search for CVEs related to specific keywords (e.g., product name).")
+    parser.add_argument("-local", "--local-database", dest='local_database', action='store_true',
+                        help="Download the cvelistV5 repository into the local directory. Use the local database over online research if available.")
+    parser.add_argument("-f", "--fast-mode", dest='fast_mode', action='store_true',
+                        help="Enable fast mode: only display basic CVE information without fetching additional exploits or data.")
+    parser.add_argument("-m", "--methods", type=str,
+                        help="Specify which methods to run, separated by commas (e.g., 'cisa,epss,hackerone,ai,prio,references').")
+    parser.add_argument("-i", "--import-file", type=str,
+                        help="Path to an import file. When provided, positional CVE IDs can be omitted. The file should be a plain text list with one CVE per line.")
+    parser.add_argument("-c", "--config", type=str,
+                        help="Path to a custom configuration file.")
     parser.add_argument("-d", "--debug", action="store_true",
                         help="Enable debug output.")
 
     args = parser.parse_args()
-    main(args.cve_ids, args.export, args.import_file,
-         args.type, args.config, args.methods, args.debug)
+
+    if args.local_database:
+        clone_cvelistV5_repo()
+
+    if args.keywords:
+        cve_ids = search_cve_by_keywords(args.keywords)
+        if not cve_ids:
+            sys.exit("No valid CVE IDs found for the provided keywords.")
+    else:
+        cve_ids = args.cve_ids
+
+    main(cve_ids,
+         export_format=args.export,
+         import_file=args.import_file,
+         import_type=args.type,
+         ai_provider=args.ai,
+         config_path=args.config,
+         methods=args.methods,
+         debug=args.debug,
+         fast_mode=args.fast_mode)
 
 
 if __name__ == "__main__":

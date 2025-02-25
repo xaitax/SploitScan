@@ -1,5 +1,19 @@
 # 📆 Changelog
 
+## [25. February 2025] - Version 0.13.0
+
+- **Google Gemini, xAI Grok & DeepSeek Integration**  
+  Added support for multiple AI providers in risk assessment. Users can now choose between OpenAI ChatGPT, Google Gemini, Grok AI or DeepSeek via the new `--ai` option.
+
+- **Local CVE Database Update & Cloning**  
+  Implemented update (`--local`) functionality for the CVE List V5 repository. SploitScan now clones (or pulls updates from) the full CVE List V5 repository locally. 
+
+- **Keyword-Based CVE Search Across Sources**  
+  Enhanced the search functionality to allow users to search for keywords via `--keywords` (e.g., "Apple") across both the local CVE database and remote sources (CISA and Nuclei Templates). All matching CVEs are automatically looked up by SploitScan to search for associated exploits.
+
+- **Fast Mode for Streamlined Output**  
+  Introduced a fast mode (`--fast-mode`) that limits the output to only basic CVE information, bypassing additional lookups (such as public exploits, EPSS, and risk assessments) for quicker results.
+
 ## [26. January 2025] - Version 0.12.0
 
 - **CVSS Parsing Enhancements**  

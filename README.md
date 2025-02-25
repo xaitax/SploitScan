@@ -23,22 +23,51 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - 🫱🏼‍🫲🏽 [Contributing](#-contributing)
 - 📌 [Author](#-author)
 - 📆 [Changelog](#-changelog)
-- 📚 [References](#-references)
 
 ## 🌟 Features
 
-- **CVE Information Retrieval**: Fetches CVE details from the National Vulnerability Database.
-- **EPSS Integration**: Includes Exploit Prediction Scoring System (EPSS) data, offering a probability score for the likelihood of CVE exploitation, aiding in prioritization.
-- **Public Exploits Aggregation**: Gathers publicly available exploits, enhancing the understanding of vulnerabilities.
-- **CISA KEV**: Shows if the CVE has been listed in the Known Exploited Vulnerabilities (KEV) of CISA.
-- **AI-Powered Risk Assessment**: Leverages OpenAI to provide detailed risk assessments, potential attack scenarios, mitigation recommendations, and executive summaries.
-- **HackerOne Reports**: Shows if the CVE was used within HackerOne Bug Bounty programs including their total rank overall and severity distribution.
-- **Patching Priority System**: Evaluates and assigns a priority rating for patching based on various factors including public exploits availability.
-- **Multi-CVE Support and Export Options**: Supports multiple CVEs in a single run and allows exporting the results to HTML, JSON and CSV formats.
-- **Vulnerability Scanner Import**: Import vulnerability scans from popular vulnerability scanners and search directly for known exploits.
-- **Granular Method Selection**: Only specific methods (e.g., `cisa`, `epss`, `hackerone`, `ai`, etc.), giving you control over what data you want to retrieve.
-- **User-Friendly Interface**: Easy to use, providing clear and concise information.
-- **Comprehensive Security Tool**: Ideal for quick security assessments and staying informed about recent vulnerabilities.
+- **CVE Information Retrieval**  
+  Retrieve detailed information about vulnerabilities.
+
+- **EPSS Integration**  
+  Check the likelihood of exploitation with data from the Exploit Prediction Scoring System.
+
+- **Public Exploits Aggregation**  
+  Collect publicly available exploit data to help you understand the context of each vulnerability.
+
+- **CISA KEV Integration**  
+  Quickly see if a vulnerability is listed in CISA’s Known Exploited Vulnerabilities catalog.
+
+- **AI-Powered Risk Assessment**  
+  Get risk assessments using multiple AI providers (OpenAI ChatGPT, Google Gemini, Grok AI, or DeepSeek) that explain potential risks and offer mitigation ideas.
+
+- **HackerOne Reports**  
+  Find out if a vulnerability has been involved in HackerOne bug bounty reports, including basic ranking and severity details.
+
+- **Patching Priority System**  
+  Receive a simple priority rating for patching based on CVSS, EPSS, and available exploit information.
+
+- **Multi-CVE Support and Export Options**  
+  Work with multiple CVEs at once and export the results to HTML, JSON, or CSV formats.
+
+- **Vulnerability Scanner Import**  
+  Import scan results from popular vulnerability scanners (Nessus, Nexpose, OpenVAS, Docker) to directly search for known exploits.
+
+- **Granular Method Selection**  
+  Choose which specific data retrieval methods to run (such as CISA, EPSS, HackerOne, AI, etc.) so you only get the information you need.
+
+- **Local CVE Database Update & Cloning**  
+  Maintain a local copy of the CVE List V5 repository. This lets you update the full CVE data on your machine for offline use and search.
+
+- **Keyword-Based CVE Search Across Sources**  
+  Search for CVEs by keywords (for example, “Apple”) across both your local database and remote sources like CISA and Nuclei Templates.
+
+- **Fast Mode for Streamlined Output**  
+  Use fast mode to display only the basic CVE information, skipping extra lookups for quicker results.
+
+- **User-Friendly Interface**  
+  Enjoy a clear and straightforward interface that presents all the information in an easy-to-read format.
+
 
 ![sploitscan_v0 10 4](https://github.com/user-attachments/assets/4f0ff4fd-9fb4-453f-92a2-f12f41714edd)
 
@@ -83,6 +112,9 @@ apt install sploitscan
 
 - **VulnCheck**: Sign up for a free account at [VulnCheck](https://vulncheck.com/) to get your API key.
 - **OpenAI**: Create an account and get an API key at [OpenAI](https://platform.openai.com/signup/).
+- **Google Gemini**: Create an account and get an API key at [Google AI Studio](https://aistudio.google.com/app/apikey).
+- **xAI Grok**: Create an account and get an API key at [xAI](https://x.ai/api).
+- **DeepSeek**: Create an account and get an API key at [DeepSeek](https://platform.deepseek.com/api_keys).
 
 ### Configuration File
 
@@ -104,15 +136,18 @@ A typical `config.json` might look like this:
 
 ```json
 {
-  "vulncheck_api_key": "your_vulncheck_api_key",
-  "openai_api_key": "your_openai_api_key"
+    "vulncheck_api_key": "",
+    "openai_api_key": "",
+    "google_api_key": "",
+    "grok_api_key": "",
+    "deepseek_api_key": ""
 }
 ```
 
 ## 🚀 Usage
 
 ```shell
-$ sploitscan.py -h
+$ python .\sploitscan.py -h
 
 ███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
 ██╔════╝██╔══██╗██║     ██╔═══██╗██║╚══██╔══╝██╔════╝██╔════╝██╔══██╗████╗  ██║
@@ -120,29 +155,34 @@ $ sploitscan.py -h
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.12.0 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.13.0 / Alexander Hagenah / @xaitax / ah@primepage.de
 
-usage: sploitscan.py [-h] [-e {json,JSON,csv,CSV,html,HTML}] [-t {nessus,nexpose,openvas,docker}] [-m METHODS] [-i IMPORT_FILE] [-c CONFIG] [-d] [cve_ids ...]
+usage: sploitscan.py [-h] [-e {json,csv,html}] [-t {nessus,nexpose,openvas,docker}] [--ai {openai,google,grok,deepseek}] [-k KEYWORDS [KEYWORDS ...]] [-local] [-f] [-m METHODS] [-i IMPORT_FILE] [-c CONFIG] [-d] [cve_ids ...]
 
-SploitScan: Retrieve and display vulnerability data as well as public exploits for given CVE ID(s).
+SploitScan: Retrieve and display vulnerability and exploit data for specified CVE ID(s).
 
 positional arguments:
-  cve_ids               Enter one or more CVE IDs to fetch data. Separate multiple CVE IDs with spaces. Format for each ID: CVE-YYYY-NNNNN. This argument is optional if an import file is provided
-                        using the -i option.
+  cve_ids               Enter one or more CVE IDs (e.g., CVE-YYYY-NNNNN). This is optional if an import file is provided via -i.
 
 options:
   -h, --help            show this help message and exit
-  -e {json,JSON,csv,CSV,html,HTML}, --export {json,JSON,csv,CSV,html,HTML}
-                        Optional: Export the results to a JSON, CSV, or HTML file. Specify the format: 'json', 'csv', or 'html'.
+  -e {json,csv,html}, --export {json,csv,html}
+                        Export the results in the specified format ('json', 'csv', or 'html').
   -t {nessus,nexpose,openvas,docker}, --type {nessus,nexpose,openvas,docker}
-                        Specify the type of the import file: 'nessus', 'nexpose', 'openvas' or 'docker'.
+                        Specify the type of the import file ('nessus', 'nexpose', 'openvas', or 'docker').
+  --ai {openai,google,grok,deepseek}
+                        Select the AI provider for risk assessment (e.g., 'openai', 'google', 'grok', or 'deepseek').
+  -k KEYWORDS [KEYWORDS ...], --keywords KEYWORDS [KEYWORDS ...]
+                        Search for CVEs related to specific keywords (e.g., product name).
+  -local, --local-database
+                        Download the cvelistV5 repository into the local directory. Use the local database over online research if available.
+  -f, --fast-mode       Enable fast mode: only display basic CVE information without fetching additional exploits or data.
   -m METHODS, --methods METHODS
-                        Specify which methods to run, separated by commas. Options: 'cisa', 'epss', 'hackerone', 'ai', 'prio', 'references', etc.
+                        Specify which methods to run, separated by commas (e.g., 'cisa,epss,hackerone,ai,prio,references').
   -i IMPORT_FILE, --import-file IMPORT_FILE
-                        Path to an import file. If used, CVE IDs can be omitted from the command line arguments. Expected file type is a plain text file with one CVE per line. Vulnerability scanner
-                        files can be imported also with the --type argument to specify the correct type
+                        Path to an import file. When provided, positional CVE IDs can be omitted. The file should be a plain text list with one CVE per line.
   -c CONFIG, --config CONFIG
-                        Path to a custom config file.
+                        Path to a custom configuration file.
   -d, --debug           Enable debug output.
 ```
 
@@ -156,6 +196,77 @@ sploitscan CVE-2024-1709
 
 ```bash
 sploitscan CVE-2024-1709 CVE-2024-21413
+```
+
+### Local CVE Database Update
+
+You can now update (or initially clone) the full CVE List V5 repository locally by using the `--local` option. Note that this repository is several GB in size, so the download may take a while. For example:
+
+```bash
+sploitscan -local
+
+███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
+██╔════╝██╔══██╗██║     ██╔═══██╗██║╚══██╔══╝██╔════╝██╔════╝██╔══██╗████╗  ██║
+███████╗██████╔╝██║     ██║   ██║██║   ██║   ███████╗██║     ███████║██╔██╗ ██║
+╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
+███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
+╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
+v0.13.0 / Alexander Hagenah / @xaitax / ah@primepage.de
+
+📥 Cloning CVE List V5 into 'C:\Users\ah/.sploitscan\cvelistV5'.
+⚠️ Warning: The repository is several GB in size and the download may take a while.
+🔄 Progress: 100.00% - 940.62 MiB | 4.97 MiB/s
+✅ CVE List V5 cloned successfully.
+```
+
+### Keyword-Based Search Across Sources
+
+Search for CVEs by keywords (e.g., "Apple") across the local database, CISA, and Nuclei Templates.
+
+> [!TIP]
+> This can replace more or less replace [searchsploit](https://www.exploit-db.com/searchsploit) as [ExploitDB](https://www.exploit-db.com/) isn't regularly updated anymore. 
+
+```bash
+sploitscan -k "Outlook Express"
+
+███████╗██████╗ ██╗      ██████╗ ██╗████████╗███████╗ ██████╗ █████╗ ███╗   ██╗
+██╔════╝██╔══██╗██║     ██╔═══██╗██║╚══██╔══╝██╔════╝██╔════╝██╔══██╗████╗  ██║
+███████╗██████╔╝██║     ██║   ██║██║   ██║   ███████╗██║     ███████║██╔██╗ ██║
+╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
+███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
+╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
+v0.13.0 / Alexander Hagenah / @xaitax / ah@primepage.de
+
+┌───[ 🕵️ Searching local database for keywords: outlook express ]
+Processing CVE files: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 282372/282372 [04:38<00:00, 1013.92it/s]
+
+╔═══════════════════════════════════════════╗
+║ Found 48 CVE(s) matching: Outlook Express ║
+╚═══════════════════════════════════════════╝
+
+CVE-1999-0967, CVE-1999-1016, CVE-1999-1033, CVE-2000-0036, CVE-2000-0105, CVE-2000-0415, CVE-2000-0524, CVE-2000-0567, CVE-2000-0621, CVE-2000-0653, CVE-2001-0145, CVE-2001-0149, CVE-2001-0945, CVE-2001-0999, CVE-2001-1088, CVE-2001-1325, CVE-2001-1547, CVE-2002-0152, CVE-2002-0285, CVE-2002-0637, CVE-2002-0862, CVE-2002-1121, CVE-2002-1179, CVE-2002-2164, CVE-2002-2202, CVE-2003-0301, CVE-2003-1105, CVE-2003-1378, CVE-2004-0215, CVE-2004-0380, CVE-2004-0526, CVE-2004-2137, CVE-2004-2694, CVE-2005-1213, CVE-2005-2226, CVE-2005-4840, CVE-2006-0014, CVE-2006-2111, CVE-2006-2386, CVE-2006-2766, CVE-2007-2225, CVE-2007-2227, CVE-2007-3897, CVE-2007-4040, CVE-2008-1448, CVE-2008-5424, CVE-2010-0816, CVE-2024-1187
+
+╔═══════════════════════╗
+║ CVE ID: CVE-2001-1547 ║
+╚═══════════════════════╝
+
+┌───[ 🔍 Vulnerability information ]
+|
+├ Published:   2005-07-14
+├ Base Score:  N/A (N/A)
+├ Vector:      N/A
+└ Description: Outlook Express 6.0, with "Do not allow attachments to be saved or opened that could potentially be
+               a virus" enabled, does not block email attachments from forwarded messages, which
+               could allow remote attackers to execute arbitrary code.
+[...]
+```
+
+### Fast Mode
+
+Enable fast mode to only display basic CVE information (skipping additional lookups).
+
+```bash
+sploitscan CVE-2024-1709 --fast-mode
 ```
 
 ### Import from Vulnerability Scanner
@@ -209,6 +320,8 @@ docker run -v $(pwd):/app --rm sploitscan CVE-2024-1709 -e JSON
 
 ## 🤖 AI-Powered Risk Assessment
 
+Select an AI provider for risk assessment (OpenAI ChatGPT, Google Gemini, Grok AI and DeepSeek).
+
 SploitScan integrates with OpenAI to provide a comprehensive AI-powered risk assessment for each CVE. This feature includes:
 
 - Detailed Risk Assessment: Understand the nature of the vulnerability and its business impact.
@@ -220,7 +333,7 @@ SploitScan integrates with OpenAI to provide a comprehensive AI-powered risk ass
 
 ```text
 
-$ sploitscan.py CVE-2024-21413
+$ sploitscan.py --ai openai CVE-2024-21413
 
 [...]
 
@@ -291,6 +404,8 @@ Contributions are welcome! Whether it's fixing bugs, adding new features, or imp
 
 Special thanks to:
 
+- [UjjwalBudha](https://github.com/UjjwalBudha) for ideas & code
+- [hexwreaker](https://github.com/hexwreaker) for ideas & code
 - [Nilsonfsilva](https://github.com/Nilsonfsilva) for support on Debian packaging.
 - [bcoles](https://github.com/bcoles) for bugfixes.
 - [Javier Álvarez](https://github.com/jalvarezz13) for bugfixes.
@@ -309,18 +424,4 @@ Special thanks to:
 
 ## 📆 Changelog
 
-- For a detailed list of updates, fixes, and new features, check the [Changelog](CHANGELOG.md).
-
-## 📚 References
-
-- [CISA Known Exploited Vulnerabilities Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
-- [CVE Program](https://github.com/CVEProject/cvelistV5)
-- [ExploitDB](https://www.exploit-db.com/)
-- [FIRST EPSS](https://www.first.org/epss/api)
-- [HackerOne](https://hackerone.com/)
-- [nomi-sec PoC-in-GitHub API](https://poc-in-github.motikan2010.net/)
-- [OpenAI](https://openai.com/)
-- [Packet Storm](https://packetstormsecurity.com/)
-- [ProjectDiscovery Nuclei](https://github.com/projectdiscovery/nuclei-templates)
-- [VulnCheck](https://vulncheck.com/)
-
+For a detailed list of updates, fixes, and new features, check the [Changelog](CHANGELOG.md).
