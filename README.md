@@ -104,8 +104,12 @@ A typical `config.json` might look like this:
 
 ```json
 {
-  "vulncheck_api_key": "your_vulncheck_api_key",
-  "openai_api_key": "your_openai_api_key"
+  "vulncheck_api_key":  "your_vulncheck_api_key",
+  "openai_api_key":     "your_openai_api_key",
+  "openai_base_url":    "openai_supported_base_url",
+  "openai_model":       "openai_supported_model", 
+  "google_ai_api_key" : "google_api_key",
+  "google_model":       "google_supported_model" 
 }
 ```
 
@@ -206,6 +210,24 @@ docker run -v ${PWD}:/app --rm sploitscan CVE-2024-1709 -e JSON
 ```shell
 docker run -v $(pwd):/app --rm sploitscan CVE-2024-1709 -e JSON
 ```
+
+## 🤖 OpenAI-Compatible LLM Providers
+
+SploitScan's AI-powered features can also be integrated with various OpenAI-compatible Large Language Model (LLM) providers. Below is a list of some popular alternatives for using language models:
+
+1. **OpenAI**: Offers various models like GPT-3, GPT-4, and Codex.
+2. **Groq**: Provides high-performance LLM services, optimized for AI and machine learning workloads.
+3. **TogetherAI**: Offers private LLMs that can be deployed locally for privacy-focused use cases.
+4. **Ollama**: Local LLM setup providing an alternative to cloud-based AI models.
+5. **Anthropic**: Known for their Claude series of models, focusing on AI alignment and safety.
+6. **Cohere**: Provides language models that support enterprise-scale language processing.
+7. **Mistral**: Offers open-weight LLMs, ideal for research and customizable use.
+8. **LLaMA (Meta)**: Large Language Model from Meta, focused on open research and fair AI development.
+9. **Gopher (DeepMind)**: A set of LLMs focused on scalable and efficient training for a range of tasks.
+10. **Jina AI**: Specializes in neural search models that can be used for a variety of AI applications, including LLMs.
+
+These providers can be configured with SploitScan's AI-powered risk assessment and other features for a more flexible setup, allowing local or private integrations.
+
 
 ## 🤖 AI-Powered Risk Assessment
 
