@@ -17,6 +17,8 @@ from openai import OpenAI
 import google.generativeai as genai
 from jinja2 import Environment, FileSystemLoader
 
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+
 
 VERSION = "0.12.0"
 
@@ -542,7 +544,10 @@ def load_config(config_path=None, debug=False):
     default_config = {
         "vulncheck_api_key": None,
         "openai_api_key": None,
-        "google_ai_api_key": None
+        "google_ai_api_key": None,
+        "openai_base_url": "https://api.openai.com/v1",
+        "openai_model": "llama-3.3-70b-versatile",
+        "google_model": "gemini-1.5-flash"
     }
 
     def debug_print(msg):
@@ -594,7 +599,10 @@ def get_risk_assessment(cve_details, cve_data):
 
     # OpenAI API Request
     if openai_api_key:
-        client = OpenAI(api_key=openai_api_key)
+        client = OpenAI(
+            api_key=openai_api_key,
+            base_url=config.get("openai_base_url", OPENAI_BASE_URL)
+        )
         try:
             prompt = f"""
             You are a security analyst. Provide exactly four sections of output, labeled with numeric headers:
@@ -631,10 +639,10 @@ def get_risk_assessment(cve_details, cve_data):
             """
 
             response = client.chat.completions.create(
-                model="gpt-4o",
+                model=config.get("openai_model", "llama-3.3-70b-versatile"),
                 messages=[{"role": "system", "content": "You are a security analyst."},
                           {"role": "user", "content": prompt}],
-                timeout=30  # Increased timeout for reliability
+                timeout=30  
             )
             result = response.choices[0].message.content.strip()
             results.append(f"OpenAI:\n{result}")
@@ -643,7 +651,6 @@ def get_risk_assessment(cve_details, cve_data):
 
     # Google AI (Gemini API) Request with timeout handling
     if google_ai_api_key:
-        import google.generativeai as genai
         
         # Configure in a way that's compatible with older versions
         genai.configure(api_key=google_ai_api_key)
@@ -667,9 +674,15 @@ def get_risk_assessment(cve_details, cve_data):
                 Provide links to relevant resources where applicable.
 
                 4. Executive Summary
-                Summarize the vulnerability, potential impacts, and importance of taking action. Highlight key points 
-                from the risk assessment, attack scenarios, and mitigation recommendations. This summary should be 
-                understandable to non-technical stakeholders, focusing on business impact and urgency.
+               Summarize the vulnerability, potential impacts, and importance of taking action. Highlight key points
+               from the risk assessment, attack scenarios, and mitigation recommendations. This summary should be  
+               understandable to non-technical stakeholders, focusing on business impact and urgency.
+
+                IMPORTANT: 
+                - Output only plain text, with no bullet points, dashes, or Markdown formatting.
+                - Each heading must be on its own line. 
+                - If text spans multiple paragraphs, just separate them by a blank line. 
+                - No other decorative characters or lists.
 
                 CVE DETAILS:
                 {cve_details}
@@ -679,7 +692,8 @@ def get_risk_assessment(cve_details, cve_data):
                 """
                 
                 # Simple approach without context manager
-                model = genai.GenerativeModel("gemini-1.5-flash")
+                google_model = config.get("google_model", "gemini-1.5-flash")
+                model = genai.GenerativeModel(google_model)
                 response = model.generate_content(prompt)
                 
                 if hasattr(response, "text"):
@@ -764,35 +778,26 @@ def display_ai_risk_assessment(cve_details, cve_data):
             print(f"| {source}:")
             print("| " + "-" * (len(source) + 1))
 
-            # Fix formatting issues
+            # Fix formatting issues:
             content = re.sub(r"\*\*(.*?)\*\*", r"\1", content)  # Remove bold markers
             content = re.sub(r"(\w+):\n", r"\1:\n|   ", content)  # Ensure headers format correctly
             content = content.replace("* ", "- ")  # Replace bullet points with dashes
 
-            sections = content.split("\n\n")
-            for section in sections:
-                section = section.strip()
-                if section:
-                    if section.startswith(("1. ", "2. ", "3. ", "4. ")):
-                        header = section.split("\n")[0].strip()
-                        print(f"|   {header}")
-                        print("|   " + "-" * (len(header) + 1))
-                        content_body = "\n".join(section.split("\n")[1:]).strip()
-                        wrapped_content = textwrap.fill(
-                            content_body, width=100, initial_indent="|   ", subsequent_indent="|   "
-                        )
-                        print(wrapped_content)
-                    else:
-                        wrapped_content = textwrap.fill(
-                            section, width=100, initial_indent="|   ", subsequent_indent="|   "
-                        )
-                        print(wrapped_content)
-                    print("|")
+            # Break long URLs into smaller parts manually:
+            content = re.sub(r"(https?://[^\s]+)", lambda x: '\n'.join(textwrap.wrap(x.group(), width=100, break_long_words=False)), content)
+
+            # Apply text wrapping to ensure consistent formatting
+            wrapped_content = textwrap.fill(content, width=100, initial_indent="|   ", subsequent_indent="|   ")
+
+            print(wrapped_content)
+            print("|")
     else:
         print("| ❌ No AI Risk Assessment could be retrieved.")
         print("|")
 
     print("└────────────────────────────────────────\n")
+
+
 
 
 def import_vulnerability_data(file_path, file_type=None):

@@ -1,5 +1,8 @@
 {
     "vulncheck_api_key": "",
     "openai_api_key": "",
-    "google_ai_api_key" : ""
+    "openai_base_url": "",
+    "openai_model": "", 
+    "google_ai_api_key" : "",
+    "google_model": "" 
 }
