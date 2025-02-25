@@ -546,7 +546,7 @@ def load_config(config_path=None, debug=False):
         "openai_api_key": None,
         "google_ai_api_key": None,
         "openai_base_url": "https://api.openai.com/v1",
-        "openai_model": "llama-3.3-70b-versatile",
+        "openai_model": "gpt-4o",
         "google_model": "gemini-1.5-flash"
     }
 
