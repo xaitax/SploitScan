@@ -14,7 +14,6 @@ import os
 import csv
 import re
 import xml.etree.ElementTree as ET
-import subprocess
 import concurrent.futures
 from tqdm import tqdm
 from git import Repo, GitCommandError, RemoteProgress
@@ -32,9 +31,7 @@ ENDC = "\033[0m"
 CVE_GITHUB_URL = "https://raw.githubusercontent.com/CVEProject/cvelistV5/main/cves"
 EPSS_API_URL = "https://api.first.org/data/v1/epss?cve={cve_id}"
 CISA_URL = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
-NUCLEI_URL = (
-    "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/cves.json"
-)
+NUCLEI_URL = "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/cves.json"
 GITHUB_API_URL = "https://poc-in-github.motikan2010.net/api/v1/"
 VULNCHECK_API_URL = "https://api.vulncheck.com/v3/index/vulncheck-kev"
 EXPLOITDB_URL = "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv?ref_type=heads"
@@ -55,8 +52,7 @@ PRIORITY_COLORS = {
 
 def get_cve_repo_dir():
     try:
-        base_dir = config.get("local_database_dir",
-                              os.path.expanduser("~/.sploitscan"))
+        base_dir = config.get("local_database_dir", os.path.expanduser("~/.sploitscan"))
     except NameError:
         base_dir = os.path.expanduser("~/.sploitscan")
     return os.path.join(base_dir, "cvelistV5")
@@ -91,8 +87,7 @@ def clone_cvelistV5_repo():
     if not os.path.exists(os.path.join(local_dir, '.git')):
         try:
             print(f"📥 Cloning CVE List V5 into '{local_dir}'.")
-            print(
-                "⚠️ Warning: The repository is several GB in size and the download may take a while.")
+            print("⚠️ Warning: The repository is several GB in size and the download may take a while.")
             Repo.clone_from(repo_url, local_dir, progress=CloneProgress())
             print("\n✅ CVE List V5 cloned successfully.")
         except GitCommandError as e:
@@ -102,8 +97,7 @@ def clone_cvelistV5_repo():
         try:
             repo = Repo(local_dir)
             if repo.bare:
-                print(
-                    f"❌ Repository at '{local_dir}' is bare. Cannot pull updates.")
+                print(f"❌ Repository at '{local_dir}' is bare. Cannot pull updates.")
                 return None
             print(f"📥 Pulling updates in '{local_dir}'...")
             repo.remotes.origin.pull()
@@ -125,8 +119,7 @@ def grep_local_db(keywords):
     else:
         keywords = [kw.lower() for kw in keywords]
 
-    print(
-        f"┌───[ 🕵️ Searching local database for keywords: {', '.join(keywords)} ]")
+    print(f"┌───[ 🕵️ Searching local database for keywords: {', '.join(keywords)} ]")
 
     json_files = []
     for root, _, files in os.walk(local_dir):
@@ -278,9 +271,7 @@ def fetch_cisa_data():
     if data and "vulnerabilities" in data:
         for vulnerability in data["vulnerabilities"]:
             vulnerability["cisa_status"] = "Yes"
-            vulnerability["ransomware_use"] = vulnerability.get(
-                "knownRansomwareCampaignUse", "Unknown"
-            )
+            vulnerability["ransomware_use"] = vulnerability.get("knownRansomwareCampaignUse", "Unknown")
     return data, error
 
 
@@ -309,8 +300,7 @@ def fetch_vulncheck_data(cve_id):
         "authorization": f"Bearer {vulncheck_api_key}",
     }
 
-    response = fetch_data(VULNCHECK_API_URL, params={
-                          "cve": cve_id}, headers=headers)
+    response = fetch_data(VULNCHECK_API_URL, params={"cve": cve_id}, headers=headers)
     if isinstance(response, str):
         return None, response
 
@@ -449,8 +439,7 @@ def display_epss_score(epss_data, error=None):
             return [f"└ EPSS Score:  {percent:.2f}% Probability of exploitation."]
         return []
 
-    display_data("♾️ Exploit Prediction Score (EPSS)",
-                 epss_data, template, error)
+    display_data("♾️ Exploit Prediction Score (EPSS)", epss_data, template, error)
 
 
 def display_cisa_status(cve_id, cisa_data, error=None):
@@ -460,8 +449,8 @@ def display_cisa_status(cve_id, cisa_data, error=None):
 
         for vulnerability in data["vulnerabilities"]:
             if vulnerability["cveID"] == cve_id:
-                cisa_status = vulnerability["cisa_status"]
-                ransomware_use = vulnerability["ransomware_use"]
+                cisa_status = vulnerability.get("cisa_status", "N/A")
+                ransomware_use = vulnerability.get("ransomware_use", "N/A")
                 return [
                     f"├ Listed:      {cisa_status}",
                     f"└ Ransomware:  {ransomware_use}",
@@ -487,8 +476,7 @@ def display_public_exploits(
                 created_at = poc.get("created_at", "N/A")
                 if created_at != "N/A":
                     created_at = parse_iso_date(created_at)
-                entries.append(
-                    f"│  ├ Date: {created_at} - {poc.get('html_url', 'N/A')}")
+                entries.append(f"│  ├ Date: {created_at} - {poc.get('html_url', 'N/A')}")
                 total_exploits += 1
             if entries:
                 entries[-1] = entries[-1].replace("├", "└")
@@ -527,7 +515,8 @@ def display_public_exploits(
             entries.append("│")
             entries.append("├ Exploit-DB")
             sorted_exploitdb = sorted(
-                exploitdb_data, key=lambda x: x["date"], reverse=True)
+                exploitdb_data, key=lambda x: x["date"], reverse=True
+            )
             for item in sorted_exploitdb:
                 url = f"https://www.exploit-db.com/exploits/{item['id']}"
                 entries.append(f"│  ├ Date: {item['date']} - {url}")
@@ -537,8 +526,7 @@ def display_public_exploits(
 
         other_entries = []
         if packetstorm_data and packetstorm_data.get("packetstorm_url"):
-            other_entries.append(
-                f"PacketStorm: {packetstorm_data['packetstorm_url']}")
+            other_entries.append(f"PacketStorm: {packetstorm_data['packetstorm_url']}")
         if nuclei_data and nuclei_data.get("file_path"):
             base_url = "https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/"
             file_path = nuclei_data["file_path"]
@@ -579,8 +567,7 @@ def display_hackerone_data(hackerone_data, error=None):
             return ["└ ❌ No data found."]
 
         rank = cve_entry.get("rank", "N/A")
-        reports_submitted_count = cve_entry.get(
-            "reports_submitted_count", "N/A")
+        reports_submitted_count = cve_entry.get("reports_submitted_count", "N/A")
         severity_unknown = cve_entry.get("severity_count_unknown", 0)
         severity_none = cve_entry.get("severity_count_none", 0)
         severity_low = cve_entry.get("severity_count_low", 0)
@@ -628,14 +615,12 @@ def calculate_priority(
         pass
 
     try:
-        epss_score = float(epss_data["data"][0]["epss"]
-                           ) if epss_data and "data" in epss_data else 0
+        epss_score = float(epss_data["data"][0]["epss"]) if epss_data and "data" in epss_data else 0
     except (KeyError, IndexError, TypeError, ValueError):
         pass
 
     in_cisa_kev = (
-        any(vuln["cveID"] == cve_id for vuln in cisa_data.get(
-            "vulnerabilities", []))
+        any(vuln["cveID"] == cve_id for vuln in cisa_data.get("vulnerabilities", []))
         if cisa_data
         else False
     )
@@ -673,23 +658,17 @@ def display_priority_rating(cve_id, priority):
     if priority is None:
         display_data("⚠️ Patching Priority Rating", None, template)
     else:
-        display_data("⚠️ Patching Priority Rating", {
-                     "priority": priority}, template)
+        display_data("⚠️ Patching Priority Rating", {"priority": priority}, template)
 
 
 def load_config(config_path=None, debug=False):
-    """
-    Attempts to load a JSON config file in this order:
-      1. The file path provided by `config_path`.
-      2. The file path from the SPLOITSCAN_CONFIG_PATH environment variable.
-      3. A list of standard config-file locations.
-    Returns a dictionary of config data. If no file is found or parsing fails,
-    returns the default config.
-    """
-
     default_config = {
         "vulncheck_api_key": None,
-        "openai_api_key": None
+        "openai_api_key": None,
+        "google_ai_api_key": None,
+        "grok_api_key": None,
+        "deepseek_api_key": None,
+        "local_database_dir": None,
     }
 
     def debug_print(msg):
@@ -706,12 +685,10 @@ def load_config(config_path=None, debug=False):
         candidate_paths.append(env_path)
 
     candidate_paths.extend([
-        os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), "config.json"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json"),
         os.path.expanduser("~/.sploitscan/config.json"),
         os.path.expanduser("~/.config/sploitscan/config.json"),
-        os.path.expanduser(
-            "~/Library/Application Support/sploitscan/config.json"),
+        os.path.expanduser("~/Library/Application Support/sploitscan/config.json"),
         os.path.join(os.getenv("APPDATA", ""), "sploitscan", "config.json"),
         "/etc/sploitscan/config.json"
     ])
@@ -771,8 +748,7 @@ def get_google_risk_assessment(prompt):
                 return "Google AI: AI analysis failed."
         except Exception as e:
             if attempt < 2:
-                print(
-                    f"⚠️ Google AI Timeout (Attempt {attempt+1}/3), retrying...")
+                print(f"⚠️ Google AI Timeout (Attempt {attempt+1}/3), retrying...")
                 time.sleep(5)
             else:
                 return f"❌ Error fetching data from Google AI: {e}"
@@ -812,8 +788,7 @@ def get_deepseek_risk_assessment(prompt):
     if not deepseek_api_key:
         return "❌ DeepSeek API key is not configured correctly."
     try:
-        client = OpenAI(api_key=deepseek_api_key,
-                        base_url="https://api.deepseek.com")
+        client = OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com")
         response = client.chat.completions.create(
             model="deepseek-chat",
             messages=[
@@ -893,8 +868,7 @@ def display_ai_risk_assessment(cve_details, cve_data, ai_provider):
     def get_risk_assessment_thread():
         nonlocal assessment
         try:
-            assessment = get_risk_assessment(
-                ai_provider, cve_details, cve_data)
+            assessment = get_risk_assessment(ai_provider, cve_details, cve_data)
         except Exception as e:
             assessment = f"❌ Error fetching AI response: {e}"
         global stop_spinner
@@ -954,8 +928,7 @@ def import_vulnerability_data(file_path, file_type=None):
             return import_file(file_path, parse_plaintext_cve_list)
         else:
             print(
-                f"❌ Error: The file '{
-                    file_path}' does not appear to be a valid list of CVEs. "
+                f"❌ Error: The file '{file_path}' does not appear to be a valid list of CVEs. "
                 "Please specify the correct file type using the --type option."
             )
             return []
@@ -1038,8 +1011,7 @@ def import_file(file_path, parse_function):
         unique_cve_ids = list(set(cve_ids))
         print(
             YELLOW +
-            f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{
-                file_path}'.\n"
+            f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{file_path}'.\n"
         )
         return unique_cve_ids
     except ET.ParseError as e:
@@ -1047,8 +1019,7 @@ def import_file(file_path, parse_function):
     except json.JSONDecodeError as e:
         print(f"❌ Error parsing the JSON file '{file_path}': {e}")
     except Exception as e:
-        print(f"❌ An unexpected error occurred while processing '{
-              file_path}': {e}")
+        print(f"❌ An unexpected error occurred while processing '{file_path}': {e}")
     return []
 
 
@@ -1058,8 +1029,7 @@ def is_valid_cve_id(cve_id):
 
 def generate_filename(cve_ids, extension):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    cve_part = "_".join(cve_ids[:3]) + \
-        ("_and_more" if len(cve_ids) > 3 else "")
+    cve_part = "_".join(cve_ids[:3]) + ("_and_more" if len(cve_ids) > 3 else "")
     return f"{timestamp}_{cve_part}_export.{extension}"
 
 
@@ -1082,8 +1052,7 @@ def export_to_html(all_results, cve_ids):
                 env = Environment(loader=FileSystemLoader(path))
                 break
         else:
-            print(
-                "❌ HTML template 'report_template.html' not found in any checked locations.")
+            print("❌ HTML template 'report_template.html' not found in any checked locations.")
             return ["❌ Error exporting to HTML: template not found"]
 
         env.filters["datetimeformat"] = datetimeformat
@@ -1100,17 +1069,12 @@ def export_to_html(all_results, cve_ids):
         for result in data:
             result["Public Exploits Total"] = sum(
                 [
-                    len(result.get("GitHub Data", {}).get("pocs", []))
-                    if result.get("GitHub Data")
-                    else 0,
+                    len(result.get("GitHub Data", {}).get("pocs", [])) if result.get("GitHub Data") else 0,
                     sum(
                         len(item.get("vulncheck_xdb", []))
                         for item in result.get("VulnCheck Data", {}).get("data", [])
-                    )
-                    if result.get("VulnCheck Data")
-                    else 0,
-                    len(result.get("ExploitDB Data", [])) if result.get(
-                        "ExploitDB Data") else 0,
+                    ) if result.get("VulnCheck Data") else 0,
+                    len(result.get("ExploitDB Data", [])) if result.get("ExploitDB Data") else 0,
                 ]
             )
 
@@ -1133,17 +1097,14 @@ def export_to_html(all_results, cve_ids):
 
             if result.get("EPSS Data") and result["EPSS Data"].get("data") and len(result["EPSS Data"]["data"]) > 0:
                 try:
-                    epss_value = float(
-                        result["EPSS Data"]["data"][0].get("epss", 0))
+                    epss_value = float(result["EPSS Data"]["data"][0].get("epss", 0))
                 except ValueError:
                     epss_value = 0.0
                 result["EPSS Data"]["data"][0]["epss"] = epss_value
 
             # Fix CVSS data to ensure they are float/strings in the HTML
             if "CVE Data" in result and result["CVE Data"] and "containers" in result["CVE Data"]:
-                base_score, base_severity, vector_string = extract_cvss_info(
-                    result["CVE Data"])
-                # Convert base_score to float if possible
+                base_score, base_severity, vector_string = extract_cvss_info(result["CVE Data"])
                 try:
                     base_score_float = float(base_score)
                 except (ValueError, TypeError):
@@ -1221,16 +1182,14 @@ def fetch_and_display_cisa_status(cve_id):
     cisa_data, cisa_error = fetch_cisa_data()
     display_cisa_status(cve_id, cisa_data, cisa_error)
     relevant_cisa_data = next(
-        (item for item in cisa_data.get(
-            "vulnerabilities", []) if item["cveID"] == cve_id),
+        (item for item in cisa_data.get("vulnerabilities", []) if item["cveID"] == cve_id),
         None,
     )
     return relevant_cisa_data if relevant_cisa_data else {"cisa_status": "N/A", "ransomware_use": "N/A"}
 
 
 def fetch_and_display_public_exploits(cve_id):
-    github_data, github_error = fetch_json_data(
-        GITHUB_API_URL, params={"cve_id": cve_id})
+    github_data, github_error = fetch_json_data(GITHUB_API_URL, params={"cve_id": cve_id})
     vulncheck_data, vulncheck_error = fetch_vulncheck_data(cve_id)
     exploitdb_data, exploitdb_error = fetch_exploitdb_data(cve_id)
     packetstorm_data, packetstorm_error = fetch_packetstorm_data(cve_id)
@@ -1260,10 +1219,8 @@ def fetch_and_display_hackerone_data(cve_id):
 
 
 def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits):
-    published = cve_data["cveMetadata"].get(
-        "datePublished", "N/A") if cve_data else "N/A"
-    published_formatted = parse_iso_date(
-        published) if published != "N/A" else "N/A"
+    published = cve_data["cveMetadata"].get("datePublished", "N/A") if cve_data else "N/A"
+    published_formatted = parse_iso_date(published) if published != "N/A" else "N/A"
     description = (
         next(
             (
@@ -1305,8 +1262,7 @@ def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_
         "\n".join(
             [
                 f"{xdb['date_added']}: "
-                f"{xdb['clone_ssh_url'].replace(
-                    'git@github.com:', 'https://github.com/').replace('.git', '')}"
+                f"{xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git', '')}"
                 for item in public_exploits["vulncheck_data"].get("data", [])
                 for xdb in item.get("vulncheck_xdb", [])
             ]
@@ -1315,12 +1271,10 @@ def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_
         else "N/A"
     )
 
-    packetstorm_url = public_exploits["packetstorm_data"].get(
-        "packetstorm_url", "N/A")
+    packetstorm_url = public_exploits["packetstorm_data"].get("packetstorm_url", "N/A")
 
     nuclei_url = (
-        f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{
-            public_exploits['nuclei_data']['file_path']}"
+        f"https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/{public_exploits['nuclei_data']['file_path']}"
         if public_exploits["nuclei_data"] and "file_path" in public_exploits["nuclei_data"]
         else "N/A"
     )
@@ -1330,30 +1284,28 @@ def compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_
         if cve_data and "containers" in cve_data and "cna" in cve_data["containers"]
         else []
     )
-    references = "\n".join(
-        [ref["url"] for ref in references_list]) if references_list else "N/A"
+    references = "\n".join([ref["url"] for ref in references_list]) if references_list else "N/A"
 
     return f"""
-    Published: {published_formatted}
-    Base Score: {base_score} ({base_severity})
-    Vector: {vector_string}
-    Description: {description}
-    EPSS Score: {epss_score}
-    CISA Status: {cisa_status}
-    Ransomware Use: {ransomware_use}
-    GitHub Exploits: {github_exploits}
-    VulnCheck Exploits: {vulncheck_exploits}
-    PacketStorm URL: {packetstorm_url}
-    Nuclei Template: {nuclei_url}
-    Further References: {references}
-    """
+Published: {published_formatted}
+Base Score: {base_score} ({base_severity})
+Vector: {vector_string}
+Description: {description}
+EPSS Score: {epss_score}
+CISA Status: {cisa_status}
+Ransomware Use: {ransomware_use}
+GitHub Exploits: {github_exploits}
+VulnCheck Exploits: {vulncheck_exploits}
+PacketStorm URL: {packetstorm_url}
+Nuclei Template: {nuclei_url}
+Further References: {references}
+"""
 
 
 def main(cve_ids, export_format=None, import_file=None, import_type=None, ai_provider=None,
          config_path=None, methods=None, debug=False, fast_mode=False):
     global config
-    config = load_config(config_path=config_path,
-                         debug=debug) if config_path else load_config(debug=debug)
+    config = load_config(config_path=config_path, debug=debug) if config_path else load_config(debug=debug)
 
     all_results = []
     if export_format:
@@ -1375,8 +1327,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, ai_pro
     for cve_id in cve_ids:
         cve_id = cve_id.upper()
         if not is_valid_cve_id(cve_id):
-            print(
-                f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN.")
+            print(f"❌ Invalid CVE ID format: {cve_id}. Please use the format CVE-YYYY-NNNNN.")
             continue
 
         print_cve_header(cve_id)
@@ -1385,8 +1336,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, ai_pro
             parts = cve_id.split('-')
             year = parts[1]
             hundreds = parts[2][:-3] + "xxx"
-            cve_path = os.path.join(
-                get_cve_local_dir(), year, hundreds, f"{cve_id}.json")
+            cve_path = os.path.join(get_cve_local_dir(), year, hundreds, f"{cve_id}.json")
             if os.path.exists(cve_path):
                 try:
                     with open(cve_path, "r", encoding="utf-8") as file:
@@ -1403,19 +1353,14 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, ai_pro
                 continue
 
             public_exploits = fetch_and_display_public_exploits(cve_id)
-            epss_data = fetch_and_display_epss_score(
-                cve_id) if "epss" in selected_methods else None
-            relevant_cisa_data = fetch_and_display_cisa_status(
-                cve_id) if "cisa" in selected_methods else None
-            hackerone_data = fetch_and_display_hackerone_data(
-                cve_id) if "hackerone" in selected_methods else None
+            epss_data = fetch_and_display_epss_score(cve_id) if "epss" in selected_methods else None
+            relevant_cisa_data = fetch_and_display_cisa_status(cve_id) if "cisa" in selected_methods else None
+            hackerone_data = fetch_and_display_hackerone_data(cve_id) if "hackerone" in selected_methods else None
 
             risk_assessment = None
             if "ai" in selected_methods:
-                cve_details = compile_cve_details(
-                    cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits)
-                risk_assessment = get_risk_assessment(
-                    ai_provider, cve_details, cve_data)
+                cve_details = compile_cve_details(cve_id, cve_data, epss_data, relevant_cisa_data, public_exploits)
+                risk_assessment = get_risk_assessment(ai_provider, cve_details, cve_data)
                 display_ai_risk_assessment(cve_details, cve_data, ai_provider)
 
             priority = None
@@ -1437,8 +1382,7 @@ def main(cve_ids, export_format=None, import_file=None, import_type=None, ai_pro
         cve_result = {
             "CVE Data": cve_data,
             "EPSS Data": None if fast_mode else epss_data,
-            "CISA Data": {"cisa_status": "N/A", "ransomware_use": "N/A"} if fast_mode
-            else (relevant_cisa_data or {"cisa_status": "N/A", "ransomware_use": "N/A"}),
+            "CISA Data": {"cisa_status": "N/A", "ransomware_use": "N/A"} if fast_mode else (relevant_cisa_data or {"cisa_status": "N/A", "ransomware_use": "N/A"}),
             "Nuclei Data": None if fast_mode else public_exploits.get("nuclei_data"),
             "GitHub Data": None if fast_mode else public_exploits.get("github_data"),
             "VulnCheck Data": None if fast_mode else public_exploits.get("vulncheck_data"),
@@ -1511,3 +1455,4 @@ def cli():
 
 if __name__ == "__main__":
     cli()
+
