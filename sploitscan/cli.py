@@ -73,14 +73,29 @@ def _public_exploits_bundle(cve_id: str, *, config: Dict[str, Any], cve_data: Di
     github_data, _ = fetch_github_pocs(cve_id)
 
     # Fallback: if PoC-in-GitHub API returns nothing, derive GitHub entries from CVE references
+    # Use strict URL parsing and host allow‑list to avoid substring-based checks.
     if not (github_data and isinstance(github_data, dict) and github_data.get("pocs")):
         try:
+            from urllib.parse import urlparse
             refs = (cve_data or {}).get("containers", {}).get("cna", {}).get("references", [])
             fallback: list[dict] = []
+            allowed_hosts = {
+                "github.com",
+                "www.github.com",
+                "gist.github.com",
+                "raw.githubusercontent.com",
+            }
             for ref in refs or []:
                 url = (ref or {}).get("url", "")
-                if "github.com/" in url:
-                    fallback.append({"html_url": url, "created_at": "N/A"})
+                try:
+                    parsed = urlparse(url)
+                    host = (parsed.hostname or "").lower()
+                    scheme_ok = parsed.scheme in {"http", "https"}
+                    if scheme_ok and host in allowed_hosts:
+                        fallback.append({"html_url": url, "created_at": "N/A"})
+                except Exception:
+                    # Ignore malformed URLs
+                    continue
             if fallback:
                 github_data = {"pocs": fallback}
         except Exception:
