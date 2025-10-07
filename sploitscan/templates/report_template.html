@@ -1,497 +1,771 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CVE Report</title>
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/css/tabler.min.css"
-  />
+  <title>SploitScan Report</title>
+
+  <!-- Tailwind (CDN runtime) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca'
+            },
+            kev: '#16a34a',
+            prioAPlus: '#ef4444',
+            prioA: '#f97316',
+            prioB: '#f59e0b',
+            prioC: '#3b82f6',
+            prioD: '#10b981'
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    @import url("https://rsms.me/inter/inter.css");
+    /* IMPORTANT: No Tailwind @apply here since we use CDN runtime. Define plain CSS so layout looks correct without a build step. */
 
-    :root {
-      --tblr-font-sans-serif: Inter, -apple-system, BlinkMacSystemFont,
-        San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif !important;
-      --main-color: #2c3e50;
-      --info-color: #a1b8c7;
+    :root { font-feature-settings: "rlig" 1, "calt" 1; }
+    body, button, input, select, textarea {
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
+                   "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    }
+    .container-fixed { max-width: 1200px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 9999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.2;
     }
 
-    body {
-      font-family: var(--tblr-font-sans-serif);
+    .card {
+      border-radius: 12px;
+      border: 1px solid #e5e7eb; /* gray-200 */
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .dark .card {
+      border-color: #374151; /* gray-700 */
+      background: #1f2937;   /* gray-800 */
     }
 
-    .page-title {
-      color: var(--main-color);
+    .card-header {
+      border-bottom: 1px solid #e5e7eb; /* gray-200 */
+      padding: 16px 24px;
+    }
+    .dark .card-header {
+      border-color: #374151; /* gray-700 */
     }
 
-    .card-header-light {
-      background-color: var(--info-color);
-      color: #fff;
+    .card-body { padding: 24px; }
+
+    .muted { color: #6b7280; }          /* gray-500 */
+    .dark .muted { color: #9ca3af; }    /* gray-400 */
+
+    .link {
+      color: #4f46e5;                   /* brand-600 */
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .link:hover { color: #4338ca; }     /* brand-700 */
+
+    .pill {
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
     }
 
-    .table th,
-    .table td {
-      padding: 0.15rem;
-      vertical-align: top;
-      border-top: none;
+    .tooltip { position: relative; }
+    .tooltip:hover:after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: rgba(17, 24, 39, 0.95);
+      color: white;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 20;
     }
 
-    .table th {
-      text-align: left;
+    .table-row { border-bottom: 1px solid #f3f4f6; } /* gray-100 */
+    .dark .table-row { border-color: #374151; }      /* gray-700 */
+
+    #summaryTable th {
+      padding: 8px 0;
+      font-weight: 600;
+      letter-spacing: .03em;
+      user-select: none;
+    }
+    #summaryTable td { padding: 8px 0; }
+    #summaryTable tbody tr:hover { background: rgba(17,24,39,0.04); }
+    .dark #summaryTable tbody tr:hover { background: rgba(255,255,255,0.04); }
+
+    .kbd {
+      border: 1px solid #d1d5db;        /* gray-300 */
+      border-radius: 4px;
+      padding: 2px 4px;
+      font-size: 12px;
+      background: #f9fafb;              /* gray-50 */
+    }
+    .dark .kbd {
+      background: #374151;              /* gray-700 */
+      border-color: #4b5563;            /* gray-600 */
     }
 
-    .table-sm th,
-    .table-sm td {
-      border: none;
+    .sticky-sidebar { position: sticky; top: 1rem; height: calc(100vh - 2rem); }
+    .scroll-area { max-height: calc(100vh - 12rem); }
+
+    /* CVE detail two-column grid with fixed, readable right column on desktop */
+    .cve-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+    @media (min-width: 768px) {
+      .cve-grid { grid-template-columns: minmax(0,1fr) 380px; }
     }
 
-    .table-sm th:first-child,
-    .table-sm td:first-child {
-      width: 200px;
-      text-align: left;
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 9999px;
+      background: #f3f4f6;              /* gray-100 */
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #374151;                    /* gray-700 */
+    }
+    .dark .chip {
+      background: #374151;               /* gray-700 */
+      color: #e5e7eb;                    /* gray-200 */
     }
 
-    .table {
-      table-layout: fixed;
+    /* Priority color pills */
+    .priority-A\+ { background: #fee2e2; color: #991b1b; }
+    .priority-A  { background: #ffedd5; color: #9a3412; }
+    .priority-B  { background: #fef3c7; color: #92400e; }
+    .priority-C  { background: #dbeafe; color: #1e40af; }
+    .priority-D  { background: #dcfce7; color: #065f46; }
+
+    @media print {
+      .no-print { display: none !important; }
+      .card { box-shadow: none !important; }
+      .sticky, .sticky-sidebar { position: static !important; height: auto !important; }
+      a[href]:after { content: " (" attr(href) ") "; font-size: 0.85em; color: #6b7280; }
+      html { background: #fff; }
+      body { color: #111827 !important; }
+    }
+  /* UI polish: sticky summary header, zebra rows, nicer typography, readable AI blocks, and better URL wrapping */
+    #summaryTable thead {
+      position: sticky;
+      top: 0;
+      background: #ffffff;
+      z-index: 2;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+    }
+    .dark #summaryTable thead {
+      background: #0b1220;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.08);
+    }
+    #summaryTable tbody tr:nth-child(odd) { background: rgba(17,24,39,0.02); }
+    .dark #summaryTable tbody tr:nth-child(odd) { background: rgba(255,255,255,0.03); }
+    #summaryTable th, #summaryTable td { padding: 10px 12px; }
+
+    /* Ensure anchor jumps land with spacing below the sticky header */
+    article.card { scroll-margin-top: 96px; }
+
+    /* AI risk assessment pre blocks */
+    details pre {
+      background: #f9fafb;
+      color: #111827;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 12px 14px;
+      max-height: 420px;
+      overflow: auto;
+      line-height: 1.55;
+      font-size: 0.925rem;
+    }
+    .dark details pre {
+      background: #111827;
+      color: #e5e7eb;
+      border-color: #374151;
     }
 
-    .icon {
-      margin-right: 0.5rem;
-    }
+    /* Heading and spacing polish */
+    .card-header h2, .card-header h3 { letter-spacing: 0.2px; }
+    h3 { line-height: 1.3; }
 
-    .mb-3 {
-      margin-bottom: 1.5rem !important;
-    }
-
-    .mb-4 {
-      margin-bottom: 2rem !important;
-    }
-
-    h4 {
-      margin-top: 0;
-    }
+    /* Wrap long URLs in lists for better readability */
+    ul { word-break: break-word; }
+    li > a { word-break: break-all; }
   </style>
 </head>
-<body>
-  <div class="page">
-    <div class="container-xl">
-      <div class="page-header page-header-border">
-        <div class="container-fluid">
-          <div class="row align-items-center">
-            <div class="col">
-              <h2 class="page-title">SploitScan</h2>
-              <div class="text-secondary mt-1">CVE Report</div>
+<body id="top" class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors">
+  <!-- Top nav / Header -->
+  <header class="border-b border-gray-200 bg-white/70 backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/70 sticky top-0 z-30 shadow-sm">
+    <div class="mx-auto container-fixed px-4">
+      <div class="flex items-center justify-between py-3">
+        <div class="flex items-center gap-3">
+          <div class="h-8 w-8 rounded bg-brand-600"></div>
+          <div>
+            <h1 class="text-lg font-semibold tracking-tight">SploitScan</h1>
+            <p class="text-xs muted">Modern CVE & Exploit Aggregation Report</p>
+          </div>
+          <span class="badge bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">{{ "v" }}{{ 0 }}{{ "." }}{{ 14 }}{{ "." }}{{ 0 }}</span>
+        </div>
+        <div class="flex items-center gap-2 no-print">
+          <button id="themeToggle" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+            <svg id="sun" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 hidden dark:block" viewBox="0 0 24 24" fill="currentColor"><path d="M6.76 4.84l-1.8-1.79L3.17 4.84l1.79 1.79 1.8-1.79zM1 13h3v-2H1v2zm10-9h2V1h-2v3zm7.03 1.21l1.79-1.79-1.79-1.79-1.79 1.79 1.79 1.79zM20 11v2h3v-2h-3zm-9 10h2v-3h-2v3zm-7.03-2.21l1.8 1.79 1.79-1.79-1.79-1.79-1.8 1.79zM18.36 17.2l1.79 1.79 1.79-1.79-1.79-1.79-1.79 1.79zM12 6a6 6 0 100 12A6 6 0 0012 6z"/></svg>
+            <svg id="moon" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 block dark:hidden" viewBox="0 0 24 24" fill="currentColor"><path d="M20.742 13.045a8.088 8.088 0 01-9.787-9.787A9.004 9.004 0 0012 21a9.004 9.004 0 008.742-7.955z"/></svg>
+            <span class="hidden sm:inline">Theme</span>
+          </button>
+          <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6 9V2h12v7h2a2 2 0 012 2v4h-4v6H6v-6H2v-4a2 2 0 012-2h2zm2-5v5h8V4H8zm8 10H8v4h8v-4z"/></svg>
+            <span class="hidden sm:inline">Print</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto container-fixed px-4 py-6">
+    <div class="grid grid-cols-1 lg:grid-cols-[290px_minmax(0,1fr)] gap-6">
+      <!-- Sidebar -->
+      <aside class="no-print hidden lg:block">
+        <div class="sticky sticky-sidebar">
+          <div class="card mb-4">
+            <div class="card-header">
+              <h2 class="text-sm font-semibold tracking-wide uppercase muted">Filters</h2>
             </div>
-            <div class="col-auto">
-              <div class="btn-list">
-                <a href="https://github.com/xaitax/SploitScan" class="btn">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="icon icon-tabler icon-tabler-brand-github"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="#2c3e50"
-                    fill="none"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path
-                      d="M9 19c-4.3 1.4 -4.3 -2.5 -6 -3m12 5v-3.5c0 -1 .1 -1.4 -.5 -2
-                        c2.8 -.3 5.5 -1.4 5.5 -6a4.6 4.6 0 0 0 -1.3 -3.2a4.2 4.2 0 0 0
-                        -.1 -3.2s-1.1 -.3 -3.5 1.3a12.3 12.3 0 0 0 -6.2 0c-2.4 -1.6
-                        -3.5 -1.3 -3.5 -1.3a4.2 4.2 0 0 0 -.1 3.2a4.6 4.6 0 0 0
-                        -1.3 3.2c0 4.6 2.7 5.7 5.5 6c-.6 .6 -.6 1.2 -.5 2v3.5"
-                    />
-                  </svg>
-                  GitHub
-                </a>
-                <a href="https://x.com/xaitax" class="btn d-none d-md-inline-flex">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="icon icon-tabler icon-tabler-brand-x"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    stroke-width="1.5"
-                    stroke="#2c3e50"
-                    fill="none"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path d="M4 4l11.733 16h4.267l-11.733 -16z" />
-                    <path
-                      d="M4 20l6.768 -6.768m2.46 -2.46l6.772 -6.772"
-                    />
-                  </svg>
-                  Twitter/X
-                </a>
+            <div class="card-body space-y-3">
+              <div>
+                <label class="block text-xs font-medium muted mb-1">Quick search</label>
+                <input id="searchInput" type="text" placeholder="Search CVE…" class="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-brand-500 dark:border-gray-700 dark:bg-gray-800" />
+              </div>
+              <div>
+                <label class="block text-xs font-medium muted mb-1">Priority</label>
+                <div class="flex flex-wrap gap-2">
+                  <button data-prio="A+" class="prio chip priority-A+">A+</button>
+                  <button data-prio="A" class="prio chip priority-A">A</button>
+                  <button data-prio="B" class="prio chip priority-B">B</button>
+                  <button data-prio="C" class="prio chip priority-C">C</button>
+                  <button data-prio="D" class="prio chip priority-D">D</button>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="filterCISA" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-600 dark:border-gray-600" />
+                <label for="filterCISA" class="text-sm">CISA only</label>
+              </div>
+              <div class="flex items-center gap-2">
+                <input id="filterExploit" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-600 dark:border-gray-600" />
+                <label for="filterExploit" class="text-sm">Has public exploits</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header flex items-center justify-between">
+              <h2 class="text-sm font-semibold tracking-wide uppercase muted">CVEs</h2>
+              <span class="badge bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">{{ cve_data|length }}</span>
+            </div>
+            <div class="card-body">
+              <div id="cveNav" class="scroll-area overflow-y-auto space-y-1">
+                {% for cve in cve_data %}
+                  {% set cve_meta = cve['CVE Data'].get('cveMetadata', {}) if cve['CVE Data'] else {} %}
+                  {% set cve_id = cve_meta.get('cveId', 'N/A') %}
+                  <a href="#{{ cve_id }}" class="block rounded px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">{{ cve_id }}</a>
+                {% endfor %}
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </aside>
 
-      <br />
+      <!-- Main column -->
+      <section>
+        <!-- Summary dashboard -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          {% set total = cve_data|length %}
+          {% set ns = namespace(aplus=0, cisa=0, exploits=0, cvss_sum=0.0, cvss_n=0) %}
+          {% for r in cve_data %}
+            {# Priority A+ count #}
+            {% set pr = (r.get('Priority') and r['Priority'].get('Priority')) %}
+            {% if pr == 'A+' %}{% set ns.aplus = ns.aplus + 1 %}{% endif %}
 
-      {% for cve in cve_data %}
-      {# -------------------------------------------------------------------------
-         Use local variables to reduce repetitive checks while preserving output
-         ------------------------------------------------------------------------- #}
-      {% set cve_meta = cve['CVE Data'].get('cveMetadata', {}) if cve['CVE Data'] else {} %}
-      {% set containers = cve['CVE Data'].get('containers', {}) if cve['CVE Data'] else {} %}
-      {% set cna = containers.get('cna', {}) %}
-      {% set metrics = cna.get('metrics', []) %}
-      {% set references = cna.get('references', []) %}
-      {% set descriptions = cna.get('descriptions', []) %}
-      {% set description = descriptions[0]['value'] if descriptions else 'N/A' %}
-      {% set cve_id = cve_meta.get('cveId', 'N/A') %}
-      {% set date_published = cve_meta.get('datePublished', None) %}
-      {% set base_score = metrics[0]['cvssV3_1']['baseScore']
-         if metrics and metrics[0].get('cvssV3_1') else 'N/A' %}
-      {% set base_severity = metrics[0]['cvssV3_1']['baseSeverity']
-         if metrics and metrics[0].get('cvssV3_1') else 'N/A' %}
-      {% set vector_string = metrics[0]['cvssV3_1']['vectorString']
-         if metrics and metrics[0].get('cvssV3_1') else 'N/A' %}
+            {# CISA-listed count (kept for possible future card) #}
+            {% if r.get('CISA Data') and (r['CISA Data'].get('cisa_status') == 'Yes') %}{% set ns.cisa = ns.cisa + 1 %}{% endif %}
 
-      <div class="card mb-4">
-        <div class="card-header card-header-light">
-          <h3 class="card-title">
-            <a name="{{ cve_meta['CVE ID'] if cve_meta.get('CVE ID') else cve_id }}"></a>
-            {{ cve_id }}
-          </h3>
+            {# Has public exploits (robust fallback mirrors the table computation) #}
+            {% set expl = r.get('Public Exploits Total') %}
+            {% if expl is none or expl == 0 %}
+              {% set expl = (
+                (r.get('GitHub Data') and r['GitHub Data'].get('pocs')|length or 0) +
+                (r.get('VulnCheck Data') and (r['VulnCheck Data'].get('data')|sum(attribute='vulncheck_xdb')|length if r['VulnCheck Data'].get('data') else 0) or 0) +
+                (r.get('ExploitDB Data') and r['ExploitDB Data']|length or 0) +
+                (r.get('Metasploit Data') and r['Metasploit Data'].get('modules')|length or 0) +
+                ((r.get('Nuclei Data') and (r['Nuclei Data'].get('file_path') or r['Nuclei Data'].get('raw_url'))) and 1 or 0)
+              ) %}
+            {% endif %}
+            {% if expl > 0 %}{% set ns.exploits = ns.exploits + 1 %}{% endif %}
+
+            {# Average CVSS #}
+            {% if r.get('CVE Data') and r['CVE Data'].get('cvss_info') %}
+              {% set score = r['CVE Data']['cvss_info'].get('baseScore', 0) %}
+              {% set ns.cvss_sum = ns.cvss_sum + (score|float) %}
+              {% set ns.cvss_n = ns.cvss_n + 1 %}
+            {% endif %}
+          {% endfor %}
+          {% set avg_cvss = ns.cvss_n and (ns.cvss_sum / ns.cvss_n) or 0 %}
+          <div class="card">
+            <div class="card-body">
+              <div class="muted text-xs">Total CVEs</div>
+              <div class="mt-2 text-2xl font-semibold">{{ total }}</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="muted text-xs">Priority A+</div>
+              <div class="mt-2 text-2xl font-semibold text-prioAPlus">{{ ns.aplus }}</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="muted text-xs">Has Public Exploits</div>
+              <div class="mt-2 text-2xl font-semibold">{{ ns.exploits }}</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body">
+              <div class="muted text-xs">Avg. CVSS</div>
+              <div class="mt-2 text-2xl font-semibold">{{ '%.1f'|format(avg_cvss) }}</div>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <h4><span class="icon">🔍</span> Vulnerability Information</h4>
-            <p>{{ description }}</p>
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td>Published</td>
-                  <td>
-                    {# Using 'datetimeformat' filter if date_published is valid #}
-                    {{ date_published|datetimeformat if date_published else 'N/A' }}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Base Score</td>
-                  <td>
-                    {{ base_score }} ({{ base_severity }})
-                  </td>
-                </tr>
-                <tr>
-                  <td>Vector</td>
-                  <td>{{ vector_string }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
 
-          <div class="mb-3">
-            <h4><span class="icon">♾️</span> Exploit Prediction Score (EPSS)</h4>
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td>Score</td>
-                  {% if cve['EPSS Data'] and cve['EPSS Data'].get('data') %}
-                  <td>
-                    {{ "%.2f" % (cve['EPSS Data']['data'][0]['epss'] * 100) }}%
-                    Probability of exploitation
-                  </td>
-                  {% else %}
-                  <td>N/A</td>
-                  {% endif %}
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="mb-3">
-            <h4><span class="icon">🛡️</span> CISA KEV Catalog</h4>
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td>Listed</td>
-                  <td>
-                    {{ cve['CISA Data']['cisa_status'] if cve['CISA Data'] else 'N/A' }}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Ransomware</td>
-                  <td>
-                    {{ cve['CISA Data']['ransomware_use'] if cve['CISA Data'] else 'N/A' }}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="mb-3">
-            <h4>
-              <span class="icon">💣</span>
-              Public Exploits (Total: {{ cve['Public Exploits Total'] }})
-            </h4>
-            {% if cve['GitHub Data']['pocs'] %}
-            <div class="mb-3">
-              <h4>GitHub</h4>
-              <table class="table table-sm">
-                <tbody>
-                  {% for poc in cve['GitHub Data']['pocs'] %}
-                  <tr>
-                    <td>{{ poc['created_at']|datetimeformat }}</td>
-                    <td>
-                      <a href="{{ poc['html_url'] }}" target="_blank">
-                        {{ poc['html_url'] }}
-                      </a>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+        <!-- Summary table -->
+        <div class="card mb-8">
+          <div class="card-header flex items-center justify-between">
+            <h2 class="text-sm font-semibold tracking-wide uppercase muted">Summary</h2>
+            <div class="flex items-center gap-2 no-print">
+              <span class="muted text-xs">Click headers to sort</span>
             </div>
+          </div>
+          <div class="card-body overflow-x-auto">
+            <table id="summaryTable" class="w-full text-sm">
+              <thead class="text-left text-xs uppercase muted">
+                <tr class="border-b border-gray-200 dark:border-gray-700">
+                  <th class="py-2 cursor-pointer" data-sort="str">CVE</th>
+                  <th class="py-2 cursor-pointer" data-sort="num">CVSS</th>
+                  <th class="py-2 cursor-pointer" data-sort="num">EPSS%</th>
+                  <th class="py-2 cursor-pointer" data-sort="prio">Priority</th>
+                  <th class="py-2 cursor-pointer" data-sort="cisa">CISA</th>
+                  <th class="py-2 cursor-pointer" data-sort="num">Expl.</th>
+                  <th class="py-2 cursor-pointer" data-sort="date">Published</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in cve_data %}
+                  {% set meta = r['CVE Data'] and r['CVE Data'].get('cveMetadata', {}) or {} %}
+                  {% set cve_id = meta.get('cveId', 'N/A') %}
+                  {% set pub = meta.get('datePublished', '') %}
+                  {% set cvss = (r['CVE Data'] and r['CVE Data'].get('cvss_info') and r['CVE Data']['cvss_info'].get('baseScore')) or 0 %}
+                  {% set epss = (r['EPSS Data'] and r['EPSS Data'].get('data') and r['EPSS Data']['data'] and r['EPSS Data']['data'][0].get('epss', 0)) or 0 %}
+                  {% set pr = r['Priority'] and r['Priority'].get('Priority') or '' %}
+                  {% set pr_class = 'priority-' ~ pr %}
+                  {% set cisa = (r['CISA Data'] and r['CISA Data'].get('cisa_status') == 'Yes') %}
+                  {% set expl = r['Public Exploits Total'] or (
+                    (r.get('GitHub Data') and r['GitHub Data'].get('pocs')|length or 0) +
+                    (r.get('VulnCheck Data') and (r['VulnCheck Data'].get('data')|sum(attribute='vulncheck_xdb')|length if r['VulnCheck Data'].get('data') else 0) or 0) +
+                    (r.get('ExploitDB Data') and r['ExploitDB Data']|length or 0) +
+                    (r.get('Metasploit Data') and r['Metasploit Data'].get('modules')|length or 0) +
+                    ((r.get('Nuclei Data') and (r['Nuclei Data'].get('file_path') or r['Nuclei Data'].get('raw_url'))) and 1 or 0)
+                  ) %}
+                  <tr class="table-row" data-cve="{{ cve_id }}" data-prio="{{ pr }}" data-cisa="{{ cisa }}" data-expl="{{ expl }}">
+                    <td class="py-2"><a class="link" href="#{{ cve_id }}">{{ cve_id }}</a></td>
+                    <td class="py-2">{{ cvss and ('%.1f'|format(cvss)) or 'N/A' }}</td>
+                    <td class="py-2">{{ epss and ('%.1f'|format(epss * 100)) or '0.0' }}</td>
+                    <td class="py-2"><span class="pill {{ pr and pr_class or '' }}">{{ pr or 'N/A' }}</span></td>
+                    <td class="py-2">
+                      {% if cisa %}
+                        <span class="badge bg-green-100 text-green-700 dark:bg-green-800/40 dark:text-green-100">Yes</span>
+                      {% else %}
+                        <span class="badge bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">No</span>
+                      {% endif %}
+                    </td>
+                    <td class="py-2">{{ expl }}</td>
+                    <td class="py-2">{{ pub and (pub[:10]) or 'N/A' }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CVE detail cards -->
+        <div class="space-y-6">
+          {% for cve in cve_data %}
+            {% set cve_meta = cve['CVE Data'].get('cveMetadata', {}) if cve['CVE Data'] else {} %}
+            {% set containers = cve['CVE Data'].get('containers', {}) if cve['CVE Data'] else {} %}
+            {% set cna = containers.get('cna', {}) %}
+            {% set references = cna.get('references', []) %}
+            {% set descriptions = cna.get('descriptions', []) %}
+            {% set description = descriptions and descriptions[0].get('value') or 'N/A' %}
+            {% set cve_id = cve_meta.get('cveId', 'N/A') %}
+            {% set date_published = cve_meta.get('datePublished', None) %}
+            {% set cvss_info = cve['CVE Data'].get('cvss_info') if cve['CVE Data'] else None %}
+            {% set base_score = (cvss_info and cvss_info.get('baseScore')) or 'N/A' %}
+            {% set base_severity = (cvss_info and cvss_info.get('baseSeverity')) or 'N/A' %}
+            {% set vector_string = (cvss_info and cvss_info.get('vectorString')) or 'N/A' %}
+            {% set epss_val = (cve['EPSS Data'] and cve['EPSS Data'].get('data') and cve['EPSS Data']['data'] and cve['EPSS Data']['data'][0].get('epss', 0)) or 0 %}
+            {% set pr = cve['Priority'] and cve['Priority'].get('Priority') or '' %}
+            {% set pr_class = pr and ('priority-' ~ pr) or '' %}
+            {% set cisa_listed = (cve['CISA Data'] and cve['CISA Data'].get('cisa_status') == 'Yes') %}
+            {% set github_count = (cve['GitHub Data'] and cve['GitHub Data'].get('pocs')|length) or 0 %}
+            {% set vulncheck_count = 0 %}
+            {% if cve['VulnCheck Data'] and cve['VulnCheck Data'].get('data') %}
+              {% for item in cve['VulnCheck Data']['data'] %}
+                {% set vulncheck_count = vulncheck_count + (item.get('vulncheck_xdb')|length) %}
+              {% endfor %}
+            {% endif %}
+            {% set edb_count = cve['ExploitDB Data'] and cve['ExploitDB Data']|length or 0 %}
+            {% set msf_count = (cve['Metasploit Data'] and cve['Metasploit Data'].get('modules')|length) or 0 %}
+            {% set nuclei_link = None %}
+            {% if cve['Nuclei Data'] %}
+              {% if cve['Nuclei Data'].get('raw_url') %}
+                {% set nuclei_link = cve['Nuclei Data']['raw_url'] %}
+              {% elif cve['Nuclei Data'].get('file_path') %}
+                {% set nuclei_link = 'https://raw.githubusercontent.com/projectdiscovery/nuclei-templates/main/' ~ cve['Nuclei Data']['file_path'] %}
+              {% endif %}
             {% endif %}
 
-            {% if cve['VulnCheck Data']['data'] %}
-            <div class="mb-3">
-              <h4>VulnCheck</h4>
-              <table class="table table-sm">
-                <tbody>
-                  {% for item in cve['VulnCheck Data']['data'] %}
-                  {% for xdb in item['vulncheck_xdb'] %}
-                  <tr>
-                    <td>{{ xdb['date_added']|datetimeformat }}</td>
-                    <td>
-                      <a
-                        href="{{ xdb['clone_ssh_url']
-                          .replace('git@github.com:', 'https://github.com/')
-                          .replace('.git', '') }}"
-                        target="_blank"
-                      >
-                        {{ xdb['clone_ssh_url']
-                          .replace('git@github.com:', 'https://github.com/')
-                          .replace('.git', '') }}
-                      </a>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            {% endif %}
-
-            {% if cve['ExploitDB Data'] %}
-            <div class="mb-3">
-              <h4>Exploit-DB</h4>
-              <table class="table table-sm">
-                <tbody>
-                  {% for item in cve['ExploitDB Data'] %}
-                  <tr>
-                    <td>{{ item['date']|datetimeformat }}</td>
-                    <td>
-                      <a
-                        href="https://www.exploit-db.com/exploits/{{ item['id'] }}"
-                        target="_blank"
-                      >
-                        https://www.exploit-db.com/exploits/{{ item['id'] }}
-                      </a>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-            {% endif %}
-
-            <div class="mb-3">
-              <h4>Other</h4>
-              <table class="table table-sm">
-                <tbody>
-                  {% if cve['PacketStorm Data']['packetstorm_url'] %}
-                  <tr>
-                    <td>PacketStorm</td>
-                    <td>
-                      <a
-                        href="{{ cve['PacketStorm Data']['packetstorm_url'] }}"
-                        target="_blank"
-                      >
-                        {{ cve['PacketStorm Data']['packetstorm_url'] }}
-                      </a>
-                    </td>
-                  </tr>
+            <article id="{{ cve_id }}" class="card">
+              <div class="card-header flex items-center justify-between">
+                <div class="flex flex-wrap items-center gap-2">
+                  <h3 class="text-lg font-semibold">{{ cve_id }}</h3>
+                  {% if pr %}
+                    <span class="pill {{ pr_class }}">{{ pr }}</span>
                   {% endif %}
-                  {% if cve['Nuclei Data']['file_path'] %}
-                  <tr>
-                    <td>Nuclei</td>
-                    <td>
-                      <a
-                        href="
-                          https://raw.githubusercontent.com/
-                          projectdiscovery/nuclei-templates/main/
-                          {{ cve['Nuclei Data']['file_path'] }}"
-                        target="_blank"
-                      >
-                        {{ cve['Nuclei Data']['file_path'] }}
-                      </a>
-                    </td>
-                  </tr>
+                  {% if cisa_listed %}
+                    <span class="badge bg-green-100 text-green-700 dark:bg-green-800/40 dark:text-green-100">CISA KEV</span>
                   {% endif %}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                  {% if (github_count + vulncheck_count + edb_count + msf_count + (nuclei_link and 1 or 0)) > 0 %}
+                    <span class="badge bg-blue-100 text-blue-700 dark:bg-blue-800/40 dark:text-blue-100">Has Exploits</span>
+                  {% endif %}
+                  {% if cve['Risk Assessment'] %}
+                    <span class="badge bg-purple-100 text-purple-700 dark:bg-purple-800/40 dark:text-purple-100">AI</span>
+                  {% endif %}
+                </div>
+                <a href="#top" class="muted text-xs no-print">Back to top</a>
+              </div>
+              <div class="card-body">
+                <div class="cve-grid">
+                  <!-- Left: Vulnerability info -->
+                  <div>
+                    <div class="mb-4">
+                      <div class="muted text-xs">Published</div>
+                      <div class="mt-1">{{ date_published and (date_published[:10]) or 'N/A' }}</div>
+                    </div>
+                    <div class="mb-4 flex flex-wrap gap-2">
+                      <span class="chip">CVSS: {{ base_score }} ({{ base_severity }})</span>
+                      <span class="chip">Vector: {{ vector_string }}</span>
+                      <span class="chip">EPSS: {{ epss_val and ('%.2f'|format(epss_val * 100)) or '0.00' }}%</span>
+                    </div>
+                    <div>
+                      <div class="muted text-xs mb-1">Description</div>
+                      <p class="leading-relaxed">{{ description }}</p>
+                    </div>
+                  </div>
+                  <!-- Right: Priority and sources -->
+                  <div class="space-y-4">
+                    <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                      <div class="muted text-xs mb-1">Patching Priority</div>
+                      <div class="text-xl font-semibold">
+                        {% if pr %}
+                          <span class="pill {{ pr_class }}">{{ pr }}</span>
+                        {% else %}
+                          N/A
+                        {% endif %}
+                      </div>
+                      <p class="text-sm muted mt-2">
+                        {% if pr == 'A+' %}
+                          Elevated risk due to CISA listing or public exploits present.
+                        {% elif pr == 'A' %}
+                          High severity CVSS plus elevated EPSS likelihood.
+                        {% elif pr == 'B' %}
+                          High severity CVSS with lower EPSS probability.
+                        {% elif pr == 'C' %}
+                          Lower CVSS severity but elevated EPSS likelihood.
+                        {% elif pr == 'D' %}
+                          Lower severity and lower EPSS probability.
+                        {% else %}
+                          Insufficient signals for a calculated priority.
+                        {% endif %}
+                      </p>
+                    </div>
 
-          <div class="mb-3">
-            <h4><span class="icon">🕵️</span> HackerOne Hacktivity</h4>
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td>Rank</td>
-                  <td>
-                    {% if cve['HackerOne Data']
-                          and cve['HackerOne Data'].get('data')
-                          and cve['HackerOne Data']['data'].get('cve_entry') %}
-                      {{ cve['HackerOne Data']['data']['cve_entry']['rank'] }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Reports Submitted</td>
-                  <td>
-                    {% if cve['HackerOne Data']
-                          and cve['HackerOne Data'].get('data')
-                          and cve['HackerOne Data']['data'].get('cve_entry') %}
-                      {{ cve['HackerOne Data']['data']['cve_entry']['reports_submitted_count'] }}
-                    {% else %}
-                      N/A
-                    {% endif %}
-                  </td>
-                </tr>
-                <tr>
-                  <td>Severity</td>
-                  <td>
-                    🔍 Unknown:
-                    {% if cve['HackerOne Data']
-                          and cve['HackerOne Data'].get('data')
-                          and cve['HackerOne Data']['data'].get('cve_entry') %}
-                      {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_unknown'] }}
-                    {% else %}
-                      0
-                    {% endif %}
-                    ,
-                    🚫 None:
-                    {% if cve['HackerOne Data']
-                          and cve['HackerOne Data'].get('data')
-                          and cve['HackerOne Data']['data'].get('cve_entry') %}
-                      {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_none'] }}
-                    {% else %}
-                      0
-                    {% endif %}
-                    ,
-                    ⚠️ Low:
-                    {% if cve['HackerOne Data']
-                          and cve['HackerOne Data'].get('data')
-                          and cve['HackerOne Data']['data'].get('cve_entry') %}
-                      {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_low'] }}
-                    {% else %}
-                      0
-                    {% endif %}
-                    ,
-                    🔧 Medium:
-                    {% if cve['HackerOne Data']
-                          and cve['HackerOne Data'].get('data')
-                          and cve['HackerOne Data']['data'].get('cve_entry') %}
-                      {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_medium'] }}
-                    {% else %}
-                      0
-                    {% endif %}
-                    ,
-                    🔥 High:
-                    {% if cve['HackerOne Data']
-                          and cve['HackerOne Data'].get('data')
-                          and cve['HackerOne Data']['data'].get('cve_entry') %}
-                      {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_high'] }}
-                    {% else %}
-                      0
-                    {% endif %}
-                    ,
-                    💀 Critical:
-                    {% if cve['HackerOne Data']
-                          and cve['HackerOne Data'].get('data')
-                          and cve['HackerOne Data']['data'].get('cve_entry') %}
-                      {{ cve['HackerOne Data']['data']['cve_entry']['severity_count_critical'] }}
-                    {% else %}
-                      0
-                    {% endif %}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                    <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                      <div class="muted text-xs mb-2">Public Exploits</div>
+                      <div class="space-y-2">
+                        {% if github_count > 0 %}
+                          <div>
+                            <div class="font-medium mb-1">GitHub</div>
+                            <ul class="list-disc pl-5 space-y-1">
+                              {% for poc in cve['GitHub Data']['pocs'] %}
+                                <li><a href="{{ poc['html_url'] }}" target="_blank" class="link">{{ poc['html_url'] }}</a></li>
+                              {% endfor %}
+                            </ul>
+                          </div>
+                        {% endif %}
 
-          <div class="mb-3">
-            <h4><span class="icon">🤖</span> AI-Powered Risk Assessment</h4>
-            <pre style="white-space: pre-wrap;">
-{{ cve['Risk Assessment'] }}
-            </pre>
-          </div>
+                        {% if vulncheck_count > 0 %}
+                          <div>
+                            <div class="font-medium mb-1">VulnCheck</div>
+                            <ul class="list-disc pl-5 space-y-1">
+                              {% for item in cve['VulnCheck Data']['data'] %}
+                                {% for xdb in item['vulncheck_xdb'] %}
+                                  {% set url = xdb['clone_ssh_url'].replace('git@github.com:', 'https://github.com/').replace('.git','') %}
+                                  <li><a href="{{ url }}" target="_blank" class="link">{{ url }}</a></li>
+                                {% endfor %}
+                              {% endfor %}
+                            </ul>
+                          </div>
+                        {% endif %}
 
-          <div class="mb-3">
-            <h4><span class="icon">⚠️</span> Patching Priority Rating</h4>
-            <table class="table table-sm">
-              <tbody>
-                <tr>
-                  <td>Priority</td>
-                  <td>
-                    {% if cve['Priority'] and cve['Priority']['Priority'] %}
-                      {{ cve['Priority']['Priority'] }}
+                        {% if edb_count > 0 %}
+                          <div>
+                            <div class="font-medium mb-1">Exploit‑DB</div>
+                            <ul class="list-disc pl-5 space-y-1">
+                              {% for item in cve['ExploitDB Data'] %}
+                                <li><a href="https://www.exploit-db.com/exploits/{{ item['id'] }}" target="_blank" class="link">https://www.exploit-db.com/exploits/{{ item['id'] }}</a></li>
+                              {% endfor %}
+                            </ul>
+                          </div>
+                        {% endif %}
+
+                        {% if msf_count > 0 %}
+                          <div>
+                            <div class="font-medium mb-1">Metasploit</div>
+                            <ul class="list-disc pl-5 space-y-1">
+                              {% for m in cve['Metasploit Data']['modules'] %}
+                                {% set label = m.get('fullname') ~ (m.get('rank_label') and (' [' ~ m.get('rank_label') ~ ']') or '') %}
+                                {% if m.get('url') %}
+                                  <li><a href="{{ m.get('url') }}" target="_blank" class="link">{{ label }}</a></li>
+                                {% else %}
+                                  <li>{{ label }}</li>
+                                {% endif %}
+                              {% endfor %}
+                            </ul>
+                          </div>
+                        {% endif %}
+
+                        {% if nuclei_link %}
+                          <div>
+                            <div class="font-medium mb-1">Nuclei</div>
+                            <ul class="list-disc pl-5 space-y-1">
+                              <li><a href="{{ nuclei_link }}" target="_blank" class="link">{{ nuclei_link }}</a></li>
+                            </ul>
+                          </div>
+                        {% endif %}
+
+                        {% if (github_count + vulncheck_count + edb_count + (nuclei_link and 1 or 0)) == 0 %}
+                          <div class="muted">No public exploits found.</div>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- KEV / HackerOne -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                  <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <div class="muted text-xs mb-2">CISA KEV Catalog</div>
+                    <div class="flex items-center gap-2">
+                      {% if cisa_listed %}
+                        <span class="badge bg-green-100 text-green-700 dark:bg-green-800/40 dark:text-green-100">Listed</span>
+                      {% else %}
+                        <span class="badge bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-200">Not Listed</span>
+                      {% endif %}
+                      <span class="muted text-xs">Ransomware: {{ cve['CISA Data'] and cve['CISA Data'].get('ransomware_use','Unknown') or 'Unknown' }}</span>
+                    </div>
+                  </div>
+
+                  <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                    <div class="muted text-xs mb-2">HackerOne</div>
+                    {% if cve['HackerOne Data'] and cve['HackerOne Data'].get('data') and cve['HackerOne Data']['data'].get('cve_entry') %}
+                      {% set h1 = cve['HackerOne Data']['data']['cve_entry'] %}
+                      <div class="flex flex-wrap gap-2">
+                        <span class="chip">Rank: {{ h1.get('rank','N/A') }}</span>
+                        <span class="chip">Reports: {{ h1.get('reports_submitted_count','N/A') }}</span>
+                        <span class="chip">Critical: {{ h1.get('severity_count_critical',0) }}</span>
+                        <span class="chip">High: {{ h1.get('severity_count_high',0) }}</span>
+                        <span class="chip">Medium: {{ h1.get('severity_count_medium',0) }}</span>
+                        <span class="chip">Low: {{ h1.get('severity_count_low',0) }}</span>
+                        <span class="chip">Unknown: {{ h1.get('severity_count_unknown',0) }}</span>
+                      </div>
                     {% else %}
-                      N/A
+                      <div class="muted">No HackerOne data available.</div>
                     {% endif %}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  </div>
+                </div>
 
-          <div class="mb-3">
-            <h4><span class="icon">📚</span> Further References</h4>
-            <table class="table table-sm">
-              <tbody>
-                {% if references %}
-                  {% for ref in references %}
-                  <ul>
-                    <li>
-                      <a href="{{ ref['url'] }}" target="_blank">
-                        {{ ref['url'] }}
-                      </a>
-                    </li>
-                  </ul>
-                  {% endfor %}
-                {% else %}
-                  <tr>
-                    <td>N/A</td>
-                  </tr>
+                <!-- AI Risk Assessment -->
+                {% if cve['Risk Assessment'] %}
+                  <div class="mt-6">
+                    <details class="rounded-lg border border-gray-200 dark:border-gray-700 p-4" open>
+                      <summary class="cursor-pointer text-sm font-semibold">🤖 AI-Powered Risk Assessment</summary>
+                      <pre class="mt-3 whitespace-pre-wrap text-sm leading-relaxed">{{ cve['Risk Assessment'] }}</pre>
+                      <div class="mt-3">
+                        <button class="copyBtn rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700" data-target-id="ai-{{ loop.index }}">Copy</button>
+                      </div>
+                    </details>
+                  </div>
                 {% endif %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
 
-  <script
-    src="https://cdn.jsdelivr.net/npm/@tabler/core@latest/dist/js/tabler.min.js"
-  ></script>
+                <!-- References -->
+                <div class="mt-6">
+                  <div class="muted text-xs mb-2">References</div>
+                  {% if references %}
+                    <ul class="list-disc pl-5 space-y-1">
+                      {% for ref in references %}
+                        <li><a href="{{ ref['url'] }}" target="_blank" class="link">{{ ref['url'] }}</a></li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div class="muted">No further references.</div>
+                  {% endif %}
+                </div>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="mx-auto container-fixed px-4 py-8 text-center muted text-xs">
+    Generated by SploitScan • {{ (cve_data|length) }} CVE(s)
+  </footer>
+
+  <!-- Inline script: theme, search, sort, filters -->
+  <script>
+    // Theme toggle
+    (function() {
+      const root = document.documentElement;
+      const toggle = document.getElementById('themeToggle');
+      function setTheme(dark) {
+        if (dark) root.classList.add('dark');
+        else root.classList.remove('dark');
+        localStorage.setItem('theme', dark ? 'dark' : 'light');
+      }
+      const saved = localStorage.getItem('theme');
+      setTheme(saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches);
+      toggle?.addEventListener('click', () => setTheme(!root.classList.contains('dark')));
+    })();
+
+    // Copy buttons (AI sections)
+    document.querySelectorAll('.copyBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pre = btn.closest('details').querySelector('pre');
+        if (!pre) return;
+        navigator.clipboard.writeText(pre.textContent || '').then(() => {
+          btn.textContent = 'Copied!';
+          setTimeout(() => (btn.textContent = 'Copy'), 1200);
+        });
+      });
+    });
+
+    // Summary table sorting
+    (function() {
+      const table = document.getElementById('summaryTable');
+      if (!table) return;
+      const tbody = table.querySelector('tbody');
+      let asc = true;
+      table.querySelectorAll('th[data-sort]').forEach((th, idx) => {
+        th.addEventListener('click', () => {
+          const type = th.dataset.sort;
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+          const parseCell = (td) => td.textContent.trim();
+          const getValue = (row) => {
+            const cell = row.children[idx];
+            let val = parseCell(cell);
+            if (type === 'num') return parseFloat(val) || 0;
+            if (type === 'prio') {
+              const pr = row.dataset.prio || '';
+              const map = {'A+':1,'A':2,'B':3,'C':4,'D':5,'':9};
+              return map[pr] || 9;
+            }
+            if (type === 'cisa') return row.dataset.cisa === 'true' ? 1 : 0;
+            if (type === 'date') return val;
+            return val.toLowerCase();
+          };
+          rows.sort((a,b) => {
+            const av = getValue(a), bv = getValue(b);
+            if (av < bv) return asc ? -1 : 1;
+            if (av > bv) return asc ? 1 : -1;
+            return 0;
+          });
+          asc = !asc;
+          rows.forEach(r => tbody.appendChild(r));
+        });
+      });
+    })();
+
+    // Filters: search, priority, cisa-only, has-exploits
+    (function() {
+      const input = document.getElementById('searchInput');
+      const cisa = document.getElementById('filterCISA');
+      const exploit = document.getElementById('filterExploit');
+      const prioButtons = document.querySelectorAll('.prio');
+      const table = document.getElementById('summaryTable');
+      if (!table) return;
+      const rows = Array.from(table.querySelectorAll('tbody tr'));
+      let selectedPrios = new Set();
+
+      prioButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = btn.getAttribute('data-prio');
+          if (selectedPrios.has(p)) { selectedPrios.delete(p); btn.classList.remove('ring','ring-brand-600'); }
+          else { selectedPrios.add(p); btn.classList.add('ring','ring-brand-600'); }
+          apply();
+        });
+      });
+
+      [input, cisa, exploit].forEach(el => el && el.addEventListener('input', apply));
+
+      function apply() {
+        const q = (input?.value || '').toLowerCase();
+        rows.forEach(row => {
+          const rowCve = (row.dataset.cve || '').toLowerCase();
+          const rowPr = row.dataset.prio || '';
+          const rowCisa = row.dataset.cisa === 'true';
+          const rowExpl = parseInt(row.dataset.expl || '0', 10);
+          let visible = true;
+          if (q && !rowCve.includes(q)) visible = false;
+          if (selectedPrios.size && !selectedPrios.has(rowPr)) visible = false;
+          if (cisa?.checked && !rowCisa) visible = false;
+          if (exploit?.checked && rowExpl <= 0) visible = false;
+          row.style.display = visible ? '' : 'none';
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

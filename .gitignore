@@ -1,2 +1,4 @@
 
 sploitscan/config.json
+*.pyc
+sploitscan/config.json

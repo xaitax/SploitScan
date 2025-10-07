@@ -76,8 +76,8 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **[GitHub](https://poc-in-github.motikan2010.net/)**
 - **[ExploitDB](https://www.exploit-db.com/)**
 - **[VulnCheck](https://vulncheck.com/)** (requires a **free** VulnCheck API key)
-- **[Packet Storm](https://packetstormsecurity.com/)**
 - **[Nuclei](https://github.com/projectdiscovery/nuclei-templates)**
+- **[Metasploit](https://github.com/rapid7/metasploit-framework)**
 
 ## 📁 Supported Vulnerability Scanner Import
 
@@ -138,7 +138,7 @@ A typical `config.json` might look like this:
 {
     "vulncheck_api_key": "",
     "openai_api_key": "",
-    "google_api_key": "",
+    "google_ai_api_key": "",
     "grok_api_key": "",
     "deepseek_api_key": ""
 }
@@ -155,7 +155,7 @@ $ python .\sploitscan.py -h
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.13.0 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.14.0 / Alexander Hagenah / @xaitax / ah@primepage.de
 
 usage: sploitscan.py [-h] [-e {json,csv,html}] [-t {nessus,nexpose,openvas,docker}] [--ai {openai,google,grok,deepseek}] [-k KEYWORDS [KEYWORDS ...]] [-local] [-f] [-m METHODS] [-i IMPORT_FILE] [-c CONFIG] [-d] [cve_ids ...]
 
@@ -211,7 +211,7 @@ sploitscan -local
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.13.0 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.14.0 / Alexander Hagenah / @xaitax / ah@primepage.de
 
 📥 Cloning CVE List V5 into 'C:\Users\ah/.sploitscan\cvelistV5'.
 ⚠️ Warning: The repository is several GB in size and the download may take a while.
@@ -235,7 +235,7 @@ sploitscan -k "Outlook Express"
 ╚════██║██╔═══╝ ██║     ██║   ██║██║   ██║   ╚════██║██║     ██╔══██║██║╚██╗██║
 ███████║██║     ███████╗╚██████╔╝██║   ██║   ███████║╚██████╗██║  ██║██║ ╚████║
 ╚══════╝╚═╝     ╚══════╝ ╚═════╝ ╚═╝   ╚═╝   ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═══╝
-v0.13.0 / Alexander Hagenah / @xaitax / ah@primepage.de
+v0.14.0 / Alexander Hagenah / @xaitax / ah@primepage.de
 
 ┌───[ 🕵️ Searching local database for keywords: outlook express ]
 Processing CVE files: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 282372/282372 [04:38<00:00, 1013.92it/s]

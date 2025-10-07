@@ -1,5 +1,18 @@
 # 📆 Changelog
 
+## [07. October 2025] - Version 0.14.0
+
+- **Modern modular refactor**
+  Reorganized the codebase into clear modules (fetchers, metrics, display, AI providers, importers, exporters, utils) while keeping the CLI usage and output intact. The legacy wrapper now safely delegates to the new CLI and supports both “python -m sploitscan” and direct script execution.
+
+- **HTML export redesign**
+  Complete report refresh with Tailwind (CDN) styling: dark mode toggle, sticky header, sidebar filters, sortable summary table, responsive detail cards, and a readable AI section. Kept a zero‑build setup; distro packagers can optionally ship a precompiled CSS for offline styling.
+
+- **Metasploit integration**
+  Added default Metasploit discovery via Rapid7’s modules_metadata_base.json with conditional caching. Only modules whose references contain the exact CVE ID are counted.
+
+- **Bug fixes & compatibility**
+
 ## [25. February 2025] - Version 0.13.0
 
 - **Google Gemini, xAI Grok & DeepSeek Integration**  
