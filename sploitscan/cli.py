@@ -35,7 +35,7 @@ from .compose import compile_cve_details
 from .ai import get_risk_assessment
 from .repo import clone_cvelistV5_repo
 from .search import search_cve_by_keywords
-from .importers import import_vulnerability_data
+from .importers import import_vulnerability_data, import_vulnerability_data_from_dir
 from .exporters.html_exporter import export_to_html
 from .exporters.json_exporter import export_to_json
 from .exporters.csv_exporter import export_to_csv
@@ -145,6 +145,7 @@ def main(
     methods: Optional[str] = None,
     debug: bool = False,
     fast_mode: bool = False,
+    input_dir: Optional[str] = None,
 ) -> None:
     """
     Orchestrate SploitScan workflow for one or more CVE IDs.
@@ -165,6 +166,13 @@ def main(
             print("❌ No valid CVE IDs found in the provided file.")
             return
         cve_ids = imported_ids
+
+    if input_dir:
+        imported_ids_from_dir = import_vulnerability_data_from_dir(input_dir)
+        if not imported_ids_from_dir:
+            print("❌ No valid CVE IDs found in the provided directory.")
+            return
+        cve_ids = imported_ids_from_dir
 
     if not cve_ids:
         print("❌ No CVE IDs provided. Please provide CVE IDs or an import file.")
@@ -352,6 +360,11 @@ def cli() -> None:
         type=str,
         help="Path to an import file. When provided, positional CVE IDs can be omitted. The file should be a plain text list with one CVE per line.",
     )
+    parser.add_argument(
+        "--input-dir",
+        type=str,
+        help="Path to a directory containing vulnerability reports to scan for CVE IDs.",
+    )
     parser.add_argument("-c", "--config", type=str, help="Path to a custom configuration file.")
     parser.add_argument("-d", "--debug", action="store_true", help="Enable debug output.")
 
@@ -378,4 +391,5 @@ def cli() -> None:
         methods=args.methods,
         debug=args.debug,
         fast_mode=args.fast_mode,
+        input_dir=args.input_dir,
     )

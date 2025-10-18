@@ -45,4 +45,6 @@ def generate_filename(cve_ids: Iterable[str], extension: str) -> str:
     ids: List[str] = list(cve_ids)
     cve_part = "_".join(ids[:3]) + ("_and_more" if len(ids) > 3 else "")
     cve_part = cve_part or "report"
-    return f"{ts}_{cve_part}_export.{extension.lower()}"
+    base_dir = "/results" if os.path.exists('/results') else "."
+    filename = os.path.join(base_dir, f"{ts}_{cve_part}_export.{extension.lower()}")
+    return filename

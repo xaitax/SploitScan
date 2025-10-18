@@ -1,5 +1,18 @@
 # 📆 Changelog
 
+## [18. October 2025] - Version 0.14.2
+
+- **Directory Import Feature**
+  Added support for importing CVE IDs from entire directories containing vulnerability reports. Use `--input-dir` to recursively scan directories and extract CVE IDs from all files. This complements the existing file import functionality and supports batch processing of multiple scanner reports.
+
+- **Docker Improvements**
+  Updated Dockerfile to Python 3.13, added virtual environment setup, installed git for repository operations, and created a dedicated `/results` directory for exports.
+
+- **Export Path Enhancement**
+  Modified export file generation to save results in `/results` directory when available.
+
+*Special thanks to [diwskx](https://github.com/diwskx) for the directory import feature and Docker improvements.*
+
 ## [07. October 2025] - Version 0.14.0
 
 - **Modern modular refactor**

@@ -50,8 +50,8 @@ SploitScan is a powerful and user-friendly tool designed to streamline the proce
 - **Multi-CVE Support and Export Options**  
   Work with multiple CVEs at once and export the results to HTML, JSON, or CSV formats.
 
-- **Vulnerability Scanner Import**  
-  Import scan results from popular vulnerability scanners (Nessus, Nexpose, OpenVAS, Docker) to directly search for known exploits.
+- **Vulnerability Scanner Import**
+  Import scan results from popular vulnerability scanners (Nessus, Nexpose, OpenVAS, Docker) to directly search for known exploits. Now supports directory-based import with `--input-dir` for batch processing multiple reports.
 
 - **Granular Method Selection**  
   Choose which specific data retrieval methods to run (such as CISA, EPSS, HackerOne, AI, etc.) so you only get the information you need.
@@ -180,9 +180,10 @@ options:
   -m METHODS, --methods METHODS
                         Specify which methods to run, separated by commas (e.g., 'cisa,epss,hackerone,ai,prio,references').
   -i IMPORT_FILE, --import-file IMPORT_FILE
-                        Path to an import file. When provided, positional CVE IDs can be omitted. The file should be a plain text list with one CVE per line.
+                         Path to an import file. When provided, positional CVE IDs can be omitted. The file should be a plain text list with one CVE per line.
+  --input-dir INPUT_DIR  Path to a directory containing vulnerability reports to scan for CVE IDs.
   -c CONFIG, --config CONFIG
-                        Path to a custom configuration file.
+                         Path to a custom configuration file.
   -d, --debug           Enable debug output.
 ```
 
@@ -275,6 +276,14 @@ Specify the type: 'nessus', 'nexpose', 'openvas', or 'docker' and provide the fi
 
 ```bash
 sploitscan --import-file path/to/yourfile.nessus --type nessus
+```
+
+### Import from Directory
+
+Scan an entire directory recursively for vulnerability reports and extract CVE IDs from all files.
+
+```bash
+sploitscan --input-dir path/to/reports/directory
 ```
 
 ### Select Specific Methods
@@ -413,6 +422,7 @@ Special thanks to:
 - [davidfortytwo](https://github.com/davidfortytwo) for enhancements (Updated CVE retrieval and PacketStorm addition).
 - [con-f-use](https://github.com/con-f-use) for support and fixes with setuptools/PyPi.
 - [Martijn Russchen](https://github.com/martijnrusschen) for his feedback and idea on HackerOne GraphQL.
+- [diwskx](https://github.com/diwskx) for the directory import feature and Docker improvements.
 
 ## 📌 Author
 

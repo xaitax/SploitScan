@@ -112,3 +112,35 @@ def import_vulnerability_data(file_path: str, file_type: Optional[str] = None) -
 
     print(f"❌ Unsupported file type: {file_type}")
     return []
+
+
+def import_vulnerability_data_from_dir(dir_path: str) -> List[str]:
+    if not os.path.exists(dir_path):
+        print(f"❌ Error: The directory '{dir_path}' does not exist.")
+        return []
+    if not os.path.isdir(dir_path):
+        print(f"❌ Error: '{dir_path}' is not a directory. Use --input-dir with a directory path.")
+        return []
+
+    p = pathlib.Path(dir_path, encoding='utf-8').glob('**/*')
+    reports_list = [str(x) for x in p if x.is_file()]
+
+    cve_ids_list = []
+
+    for report_path in reports_list:
+        cve_ids_list.extend(import_file(report_path, parse_cve_in_report))
+
+    unique_cve_ids = list(set(cve_ids_list))
+    print(f"📥 Successfully imported {len(unique_cve_ids)} CVE(s) from '{dir_path}'\n")
+    return unique_cve_ids
+
+
+def parse_cve_in_report(file):
+    cve_pattern = r'CVE-\d{4}-\d{4,7}'
+    try:
+        content = file.read()
+        return [cve.upper() for cve in re.findall(cve_pattern, content, re.IGNORECASE)]
+
+    except Exception as e:
+        print(f"❌ Error reading file '{file}': {e}")
+        return []

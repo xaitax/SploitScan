@@ -5,7 +5,7 @@ Centralized constants for SploitScan.
 from typing import Dict
 
 # Version
-VERSION: str = "0.14.0"
+VERSION: str = "0.14.2"
 
 # ANSI Colors
 BLUE: str = "\033[94m"
