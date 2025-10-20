@@ -106,12 +106,22 @@ def calculate_priority(
     if not (cvss_score or epss_score or in_cisa_kev or has_public_exploits):
         return None
 
-    if in_cisa_kev or has_public_exploits:
-        return "A+"
-    if cvss_score >= CVSS_THRESHOLD and epss_score >= EPSS_THRESHOLD:
-        return "A"
-    if cvss_score >= CVSS_THRESHOLD:
-        return "B"
-    if epss_score >= EPSS_THRESHOLD:
-        return "C"
-    return "D"
+    if in_cisa_kev:
+        base_grade = "A+"
+    elif cvss_score >= CVSS_THRESHOLD and epss_score >= EPSS_THRESHOLD:
+        base_grade = "A"
+    elif cvss_score >= CVSS_THRESHOLD:
+        base_grade = "B"
+    elif epss_score >= EPSS_THRESHOLD:
+        base_grade = "C"
+    else:
+        base_grade = "D"
+
+    # Grade escalation if public exploit is known
+    if has_public_exploits and base_grade != "A+":
+        grade_order = ["D", "C", "B", "A", "A+"]
+        current_index = grade_order.index(base_grade)
+        new_index = min(current_index + 2, len(grade_order) - 1)
+        return grade_order[new_index]
+
+    return base_grade
