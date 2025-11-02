@@ -423,6 +423,7 @@ Special thanks to:
 - [con-f-use](https://github.com/con-f-use) for support and fixes with setuptools/PyPi.
 - [Martijn Russchen](https://github.com/martijnrusschen) for his feedback and idea on HackerOne GraphQL.
 - [diwskx](https://github.com/diwskx) for the directory import feature and Docker improvements.
+- [Manuel Sommer](https://github.com/manuel-sommer) for improving the patching prioritization calculation as well as adding Dependabot.
 
 ## 📌 Author
 

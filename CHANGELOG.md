@@ -1,5 +1,12 @@
 # 📆 Changelog
 
+## [02. November 2025] - Version 0.14.3
+
+- **Enhanced Patching Prioritization Calculation**
+- **Dependabot added**
+
+*Special thanks to [Manuel Sommer](https://github.com/manuel-sommer) for the improvements.*
+
 ## [18. October 2025] - Version 0.14.2
 
 - **Directory Import Feature**

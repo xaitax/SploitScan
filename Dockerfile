@@ -1,6 +1,6 @@
 FROM python:3.13-slim-trixie
 
-LABEL version="0.14.2"
+LABEL version="0.14.3"
 LABEL description="SploitScan is a powerful and user-friendly tool designed to streamline the process of identifying exploits for known vulnerabilities and their respective exploitation probability"
 
 ARG DEBIAN_FRONTEND=noninteractive

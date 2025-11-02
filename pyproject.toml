@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sploitscan"
-version = "0.14.2"
+version = "0.14.3"
 description = "SploitScan is a cybersecurity utility designed to provide detailed information on vulnerabilities and associated exploits."
 authors = [ { name = "Alexander Hagenah", email = "ah@primepage.de" } ]
 license = { file = "LICENSE" }
