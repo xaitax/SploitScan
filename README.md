@@ -396,16 +396,25 @@ $ sploitscan.py --ai openai CVE-2024-21413
 
 ## 🛡️ Patching Priority System
 
-The Patching Prioritization System in SploitScan provides a strategic approach to prioritizing security patches based on the severity and exploitability of vulnerabilities. It's influenced by the model from [CVE Prioritizer](https://github.com/TURROKS/CVE_Prioritizer), with enhancements for handling publicly available exploits. Here's how it works:
+The Patching Prioritization System in SploitScan provides a strategic approach to prioritizing security patches based on the severity and exploitability of vulnerabilities. It's influenced by the model from [CVE Prioritizer](https://github.com/TURROKS/CVE_Prioritizer), with enhancements for handling publicly available exploits. This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
+Here's how it works:
 
-- A+ Priority: Assigned to CVEs listed in CISA's KEV or those with publicly available exploits. This reflects the highest risk and urgency for patching.
-- A to D Priority: Based on a combination of CVSS scores and EPSS probability percentages. The decision matrix is as follows:
-  - A: CVSS score >= 6.0 and EPSS score >= 0.2. High severity with a significant probability of exploitation.
+- A+ Priority: Assigned to vulnerabilities listed in CISA’s Known Exploited Vulnerabilities (KEV) catalog. These represent the highest urgency due to confirmed exploitation in the wild.
+- A to D Priority: Determined by a combination of CVSS base score and EPSS (Exploit Prediction Scoring System) probability:
+  - A: CVSS score >= 6.0 and EPSS score >= 0.2. High severity with a high probability of exploitation.
   - B: CVSS score >= 6.0 but EPSS score < 0.2. High severity but lower probability of exploitation.
   - C: CVSS score < 6.0 and EPSS score >= 0.2. Lower severity but higher probability of exploitation.
   - D: CVSS score < 6.0 and EPSS score < 0.2. Lower severity and lower probability of exploitation.
 
-This system assists users in making informed decisions on which vulnerabilities to patch first, considering both their potential impact and the likelihood of exploitation. Thresholds can be changed to your business needs.
+### 🚨 Exploit-Based Escalation
+
+If a public exploit is known for a vulnerability not already rated A+, its priority is escalated by two levels.
+For example:
+
+- Any C-rated vulnerability with a public exploit becomes A-rated.
+- Any D-rated vulnerability with a public exploit becomes B-rated.
+
+This ensures that vulnerabilities with known exploitation potential are addressed with appropriate urgency.
 
 ## 🫱🏼‍🫲🏽 Contributing
 
