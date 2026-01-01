@@ -14,7 +14,7 @@ dependencies = [
     "jinja2==3.1.6",
     "openai==2.14.0",
     "google-genai==1.47.0",
-    "GitPython==3.1.45",
+    "GitPython==3.1.46",
     "tqdm==4.67.1"
 ]
 requires-python = ">=3.8"
