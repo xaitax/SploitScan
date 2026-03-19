@@ -151,7 +151,6 @@ def main(
     Orchestrate SploitScan workflow for one or more CVE IDs.
     """
     config = load_config(config_path=config_path, debug=debug)
-    print(config)
     all_results: List[Dict[str, Any]] = []
     selected = _selected(methods)
 
