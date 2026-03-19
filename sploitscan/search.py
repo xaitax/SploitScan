@@ -9,7 +9,7 @@ from .fetchers.common import iter_json_lines
 from .constants import NUCLEI_URL
 
 
-def search_cve_by_keywords(keywords: Iterable[str]) -> List[str]:
+def search_cve_by_keywords(keywords: Iterable[str], cfg: Dict[str, Any]) -> List[str]:
     """
     Aggregate CVE IDs matching all keywords across:
     - Local cvelistV5 JSON database (if present)
@@ -22,7 +22,7 @@ def search_cve_by_keywords(keywords: Iterable[str]) -> List[str]:
     results: Set[str] = set()
 
     # Local grep
-    local_cve_ids = grep_local_db(kws)
+    local_cve_ids = grep_local_db(kws, config=cfg)
     if local_cve_ids:
         results.update(local_cve_ids)
 
