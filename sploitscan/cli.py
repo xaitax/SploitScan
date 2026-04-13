@@ -151,7 +151,6 @@ def main(
     Orchestrate SploitScan workflow for one or more CVE IDs.
     """
     config = load_config(config_path=config_path, debug=debug)
-
     all_results: List[Dict[str, Any]] = []
     selected = _selected(methods)
 
@@ -375,7 +374,7 @@ def cli() -> None:
         clone_cvelistV5_repo(config=cfg)
 
     if args.keywords:
-        cve_ids = search_cve_by_keywords(args.keywords)
+        cve_ids = search_cve_by_keywords(args.keywords, cfg)
         if not cve_ids:
             raise SystemExit("No valid CVE IDs found for the provided keywords.")
     else:
