@@ -4,7 +4,6 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from typing import Callable, Iterable, List, Optional
-import datetime
 import os
 from pathlib import Path
 
