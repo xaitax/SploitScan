@@ -41,7 +41,7 @@ def generate_filename(cve_ids: Iterable[str], extension: str) -> str:
     Generate a timestamped filename like:
     20250101T123456Z_CVE-2024-1709_CVE-2024-21413_and_more_export.html
     """
-    ts = datetime.datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     ids: List[str] = list(cve_ids)
     cve_part = "_".join(ids[:3]) + ("_and_more" if len(ids) > 3 else "")
     cve_part = cve_part or "report"

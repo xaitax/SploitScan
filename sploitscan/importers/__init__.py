@@ -4,6 +4,8 @@ import json
 import re
 import xml.etree.ElementTree as ET
 from typing import Callable, Iterable, List, Optional
+import os
+from pathlib import Path
 
 
 _CVE_REGEX = re.compile(r"CVE-\d{4}-\d{4,7}$")
@@ -122,7 +124,7 @@ def import_vulnerability_data_from_dir(dir_path: str) -> List[str]:
         print(f"❌ Error: '{dir_path}' is not a directory. Use --input-dir with a directory path.")
         return []
 
-    p = pathlib.Path(dir_path, encoding='utf-8').glob('**/*')
+    p = Path(dir_path).glob('**/*')
     reports_list = [str(x) for x in p if x.is_file()]
 
     cve_ids_list = []
