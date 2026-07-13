@@ -2,5 +2,5 @@ requests==2.34.2
 jinja2==3.1.6
 openai==2.45.0
 google-genai==2.11.0
-GitPython==3.1.50
+GitPython==3.1.51
 tqdm==4.68.4
