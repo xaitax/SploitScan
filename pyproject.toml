@@ -15,7 +15,7 @@ dependencies = [
     "openai==3.2.0",
     "google-genai==2.18.1",
     "GitPython==3.1.59",
-    "tqdm==4.70.0"
+    "tqdm==4.70.1"
 ]
 requires-python = ">=3.8"
 
